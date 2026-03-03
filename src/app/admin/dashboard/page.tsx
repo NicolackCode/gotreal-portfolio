@@ -44,6 +44,30 @@ export default function DashboardPage() {
     }
   }
 
+  const handleImportV1 = async () => {
+    if (!confirm('Attention: Ceci va effacer tous les projets actuels et importer le classement hybride de la V1. Continuer ?')) return
+    setLoading(true)
+    try {
+      const res = await fetch('/v1_projects.json')
+      const v1Projects = await res.json()
+      
+      // Vider la table
+      await supabase.from('projects').delete().neq('id', 'dummy-id-to-delete')
+
+      // Insérer les nouveaux projets
+      for (const proj of v1Projects) {
+         await supabase.from('projects').insert([proj])
+      }
+      
+      alert('Import réussi !')
+      loadProjects()
+    } catch (err) {
+      alert('Erreur: Vérifiez la console')
+      console.error(err)
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -54,15 +78,23 @@ export default function DashboardPage() {
       <div className="bg-zinc-950 border border-zinc-800 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg uppercase tracking-wider">Vidéos Actives</h2>
-          <button 
-            onClick={() => {
-              setCurrentEditProject(null)
-              setIsFormOpen(true)
-            }}
-            className="bg-white text-black px-4 py-2 text-sm uppercase font-bold hover:bg-zinc-200 transition-colors"
-          >
-            + Nouveau Projet
-          </button>
+          <div className="flex gap-4">
+            <button 
+              onClick={handleImportV1}
+              className="bg-transparent border border-zinc-700 text-zinc-300 px-4 py-2 text-sm uppercase font-bold hover:bg-zinc-800 transition-colors"
+            >
+              Importer V1 (AutoRank)
+            </button>
+            <button 
+              onClick={() => {
+                setCurrentEditProject(null)
+                setIsFormOpen(true)
+              }}
+              className="bg-white text-black px-4 py-2 text-sm uppercase font-bold hover:bg-zinc-200 transition-colors"
+            >
+              + Nouveau Projet
+            </button>
+          </div>
         </div>
 
         {loading ? (
