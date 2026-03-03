@@ -143,11 +143,11 @@ window.updateHudTimeline = function (projectIndex) {
 
 // ==== 6. SYNCHRO GLOBALE AU RETOUR SUR HOME ====
 window.syncHomeVisuals = function (projectIndex) {
-    if (typeof projectsData !== 'undefined' && projectsData[projectIndex - 1]) {
-        const proj = projectsData[projectIndex - 1];
+    const pd = window._projectsData;
+    if (pd && pd[projectIndex - 1]) {
+        const proj = pd[projectIndex - 1];
         const titleEl = document.getElementById('title-current');
         if (titleEl) titleEl.textContent = proj.title;
-        // La vidÃ©o titre a changÃ©, on re-synchronise la timeline CielRose (les numÃ©ros + curseur)
         window.updateHudTimeline(projectIndex);
     }
 };

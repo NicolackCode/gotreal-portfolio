@@ -4,34 +4,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOTREAL - Director & DOP</title>
-
-    <!-- SEO & Social Media -->
-    <meta name="description"
-        content="Portfolio de GOTREAL. Réalisateur, DOP et créateur visuel. Publicités, clips musicaux et films à l'esthetique Dark Cinematic.">
-    <meta name="author" content="Gauthier MESSAGER">
-    <meta property="og:title" content="GOTREAL - Director">
-    <meta property="og:description" content="Exploration visuelle et réalisations vidéos.">
-    <meta property="og:image" content="/assets/images/og-image.jpg">
-    <meta property="og:url" content="https://gotreal.rec">
-    <meta name="twitter:card" content="summary_large_image">
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/assets/images/favicon.png">
-    <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
-
-    <!-- Fonts: Syne pour les titres (Grotesque), JetBrains Mono pour l'UI (Monospace) -->
+    <title>GOTREAL - Projet</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Syne:wght@400..800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css?v=5">
+    <style>
+        .project-gallery {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            padding-bottom: 2rem;
+            overflow-x: auto;
+            scrollbar-width: none; /* Firefox */
+        }
+        .project-gallery::-webkit-scrollbar { display: none; }
+
+        .gallery-item {
+            flex: 0 0 160px;
+            cursor: pointer;
+            transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), filter 0.4s;
+            position: relative;
+            filter: grayscale(0.8) brightness(0.6);
+        }
+        .gallery-item:hover, .gallery-item.active {
+            transform: scale(1.05) translateY(-5px);
+            filter: grayscale(0) brightness(1);
+        }
+        .gallery-item video {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .gallery-item span {
+            display: block;
+            margin-top: 0.5rem;
+            font-family: var(--font-ui);
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+        }
+        .gallery-item.active span {
+            color: var(--accent-cyan, #00f2ff);
+            font-weight: 700;
+        }
+    </style>
 </head>
 
 <body data-barba="wrapper">
 
-    <!-- Preloader Premium Mesh -->
     <div class="preloader" id="preloader">
         <div class="mesh-gradient">
             <div class="mesh-blob mesh-1"></div>
@@ -44,18 +71,10 @@
         </div>
     </div>
 
-    <!-- ===== WEBGL CANVAS GLOBAL (THREE.JS) ===== -->
-    <canvas id="webgl-canvas"
-        style="position: fixed; top: 0; left: 0; z-index: -10; width: 100vw; height: 100vh; pointer-events: none;"></canvas>
-
-    <!-- Camera Frame UI: Éléments épinglés aux coins -->
     <header class="camera-frame-top">
         <div class="logo-container">
             <a href="/index.html" class="brand-link">GOTREAL</a>
-            <div class="subtitle">
-                DIRECTOR & DOP<br>
-                PUBLICITÉS, CLIPS MUSICAUX ET FILMS.
-            </div>
+            <span class="subtitle">RÉALISATEUR &amp; CHEF OP.<br>PUBLICITÉS, CLIPS MUSICAUX ET FILMS.</span>
         </div>
         <nav class="main-nav">
             <button class="nav-btn" id="btn-about">À PROPOS</button>
@@ -64,30 +83,26 @@
         </nav>
     </header>
 
-    <!-- Homepage & Project Container -->
-    <main class="home-container" id="main-container" data-barba="container" data-barba-namespace="home">
-        <!-- Container de la vidéo (restreint au centre initialement, 100vw/100vh en focus) -->
-        <div class="video-wrapper" id="main-video-wrapper">
+    <main class="project-container" id="main-container" data-barba="container" data-barba-namespace="project">
+        <div class="video-wrapper is-expanded" id="main-video-wrapper">
 
-            <!-- Canvas Ambilight : halo de couleurs capturées depuis la vidéo -->
+            <!-- Ambilight -->
             <canvas id="ambilight-canvas" aria-hidden="true"></canvas>
 
             <div class="slider-container" id="slider-container">
-                <video class="main-video slide-video" id="video-current" src=""
-                    autoplay loop muted playsinline></video>
+                <video class="main-video slide-video" id="video-current" src="" autoplay loop muted playsinline></video>
             </div>
 
-            <!-- Informations UI superposées qui n'apparaissent qu'en plein écran -->
-            <div class="video-immersive-ui" id="immersive-ui">
+            <div class="video-immersive-ui" id="immersive-ui" style="opacity:1;">
                 <div class="video-header">
                     <div class="title-wrapper">
-                        <h2 class="video-title" id="title-current"></h2>
+                        <h2 class="video-title" id="title-current">Projet</h2>
                     </div>
-                    <span class="video-role" id="role-main">Réalisateur : Gauthier MESSAGER</span>
+                    <span class="video-role" id="role-main">Réalisateur</span>
                 </div>
                 <div class="video-footer">
                     <div class="timeline" id="timeline">
-                        <div class="timeline-progress" id="timeline-progress"></div>
+                        <div class="timeline-progress" id="timeline-progress" style="width:0%;"></div>
                     </div>
                     <div class="video-controls">
                         <button class="control-btn play-pause-btn" id="btn-pause">PAUSE</button>
@@ -100,9 +115,9 @@
                         <div id="ambilight-switcher" class="amb-dropdown-container">
                             <span class="amb-label">AMBILIGHT</span>
                             <div class="amb-dropdown">
-                                <button class="amb-btn amb-active" data-mode="0">HALO</button>
-                                <button class="amb-btn" data-mode="1">FLUX</button>
-                                <button class="amb-btn" data-mode="2">NÉON</button>
+                                <button class="amb-btn amb-active" data-mode="0">GLOW</button>
+                                <button class="amb-btn" data-mode="1">AURORA</button>
+                                <button class="amb-btn" data-mode="2">LASER</button>
                             </div>
                         </div>
                     </div>
@@ -110,35 +125,33 @@
             </div>
         </div>
 
-        <!-- UI Basse de la page d'accueil (Pagination - CielRose replica) -->
-        <footer class="cielrose-timeline">
-            <div class="cielrose-ticks">
-                <pre>|  ' ' ' '  |  ' ' ' '  |  ' ' ' '  |  ' ' ' '  |  ' ' ' '  |  ' ' ' '  |  ' ' ' '  |  ' ' ' '  |  ' ' ' '  |  ' ' ' '  |</pre>
-                <div id="cielrose-cursor" class="cielrose-cursor"></div>
-                <div class="cielrose-numbers" id="cielrose-timeline-numbers">
-                    <span
-                        class="active">01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>10</span><span>11</span>
+        <!-- Infos projet (hors video-wrapper pour le scroll) -->
+        <section class="project-details" id="project-details" style="display:block;">
+            <div class="project-info-grid">
+                <div class="col synopsis">
+                    <h3>SYNOPSIS</h3>
+                    <p>Chargement...</p>
+                </div>
+                <div class="col credits">
+                    <h3>CRÉDITS</h3>
+                    <ul id="project-credits-list">
+                        <!-- Injecté dynamiquement -->
+                    </ul>
                 </div>
             </div>
 
-            <span class="project-index" style="display:none;">01</span>
-        </footer>
-
+            <!-- Galerie Visuelle (Carousel bas) -->
+            <div class="project-gallery" id="project-gallery"></div>
+        </section>
     </main>
 
+    <footer class="camera-frame-bottom" style="opacity:0; pointer-events:none;"></footer>
 
-
-    <div class="toast-container" id="toast-container"></div>
-
-    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Observer.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Flip.min.js"></script>
-    <!-- Barba.js pour la SPA -->
     <script src="https://unpkg.com/@barba/core"></script>
-    <!-- Lenis pour le Smooth Scroll de niveau CielRose -->
     <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
-    <!-- App Logic -->
     <script src="/js/utils.js"></script>
     <script src="/js/preloader.js"></script>
     <script src="/js/animations.js"></script>

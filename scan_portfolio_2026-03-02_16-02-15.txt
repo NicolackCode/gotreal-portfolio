@@ -1,0 +1,149 @@
+====================================================
+       SCAN DU PORTFOLIO - 02/03/2026 à 16:02:15
+====================================================
+
+--- VERSION COMPLÈTE (Tous les fichiers locaux) ---
+.
+├── .agents
+│   └── rules
+│       └── da-portfolio.md
+├── _brain
+│   ├── errors
+│   │   ├── bug-css-lecteur-video.md
+│   │   └── README.md
+│   ├── references
+│   │   ├── cielrose.md
+│   │   ├── eyecannndy.md
+│   │   └── gotreal.md
+│   └── architecture.md
+├── assets
+│   └── videos
+│       ├── Aftermovie
+│       │   ├── [RAW]_Birthday_recap_-_Slalom.mp4
+│       │   ├── [RAW]_DYEN_a_Slalom.mp4
+│       │   ├── [RAW]_La_Darude_a_Slalom.mp4
+│       │   ├── [RAW]_Organik_a_Slalom.mp4
+│       │   ├── [RAW]_Rabadub_2022_-_Felleries.mp4
+│       │   ├── [RAW]_Une_eclipse_au_parfum_oriental.mp4
+│       │   ├── [TOP1]_Mandragora_a_Slalom.mp4
+│       │   ├── [TOP2]_KHAOS_a_Slalom.mp4
+│       │   ├── [TOP2]_Waterlow_-_Pornstar.mp4
+│       │   └── [TOP3]_Crystal_Chardonnay.mp4
+│       ├── Captations Live
+│       │   ├── [RAW]_AMRK_-_All_Night_Long_Slalom.mp4
+│       │   ├── [RAW]_ANSWR_-_All_Night_Long_Slalom.mp4
+│       │   ├── [RAW]_Panteros666_-_Initial_Festival.mp4
+│       │   ├── [RAW]_Panteros666_B2B_Durdenhauer.mp4
+│       │   ├── [RAW]_Teknbass_016_-_360_Highlight.mp4
+│       │   ├── [TOP1]_Eskha_-_La_Machine_du_Moulin_Rouge.mp4
+│       │   ├── [TOP1]_Skone_-_Hangar_DS.mp4
+│       │   ├── [TOP1]_Skone_-_Panorama_Festival.mp4
+│       │   ├── [TOP3]_Eskha_-_Jardin_dHiver.mp4
+│       │   ├── [TOP3]_Fragments_Nocturne.mp4
+│       │   ├── [TOP3]_Marion_Di_Napoli_-_Dour_Festival.mp4
+│       │   └── [TOP3]_Shanixx_-_LBR_Festival.mp4
+│       ├── Clip
+│       │   ├── [RAW]_Foo_Fighters_Tribute_-_All_my_life.mp4
+│       │   ├── [TOP1]_Adahy_-_Ni_femme_ni_rien.mp4
+│       │   ├── [TOP1]_RPC_-_Radical.mp4
+│       │   ├── [TOP2]_Alix_Van_Ripato_-_Terre_de_memoires.mp4
+│       │   ├── [TOP3]_PHVRA_-_Bad_Neck.mp4
+│       │   └── [TOP3]_Puzzle_-_Classique.mp4
+│       ├── Documentaire
+│       │   └── [TOP3]_Newrave_-_Les_histoires_ne_meurent_jamais.mp4
+│       ├── Mariage
+│       │   └── [TOP3]_Laetitia_et_Stephane.mp4
+│       ├── Publicité
+│       │   ├── [RAW]_Al_Hamra_Restaurant.mp4
+│       │   ├── [TOP2]_Chrysalide_-_Insty_Design.mp4
+│       │   ├── [TOP2]_Flor_Fantasy.mp4
+│       │   ├── [TOP3]_Morn_Collection.mp4
+│       │   └── [TOP3]_Slalom_-_Not_just_a_club.mp4
+│       ├── Reel
+│       │   ├── [RAW]_Back_in_the_street.mp4
+│       │   ├── [RAW]_Fossile_-_MEA.mp4
+│       │   ├── [TOP2]_Balade_en_ville.mp4
+│       │   ├── [TOP3]_ANSWR_-_DYSTOPIA.mp4
+│       │   ├── [TOP3]_Le_fou_du_bus.mp4
+│       │   └── [TOP3]_Partitions_-_MEA.mp4
+│       ├── Reportage
+│       │   ├── [RAW]_ZZZE_KIOSK_-_Felleries_2023.mp4
+│       │   └── [TOP1]_Patate_Douce_-_Fete_de_la_musique.mp4
+│       ├── Teaser
+│       │   ├── [TOP1]_AMRK_-_Teaser_All_Night_Long.mp4
+│       │   ├── [TOP1]_Annonce_sortie_album_Puzzle.mp4
+│       │   ├── [TOP2]_Spicy_V_-_Teaser_All_Night_Long.mp4
+│       │   └── [TOP3]_Annonce_Newrave_-_Valenciennes_2025.mp4
+│       ├── gotreal-paris-metro.mp4
+│       ├── puzzle-01.mp4
+│       ├── puzzle-02.mp4
+│       ├── puzzle-03.mp4
+│       ├── puzzle-04.mp4
+│       ├── puzzle-05.mp4
+│       ├── puzzle-06.mp4
+│       ├── puzzle-07.mp4
+│       ├── puzzle-08.mp4
+│       ├── puzzle-09.mp4
+│       └── slalom-not-just-a-club.mp4
+├── css
+│   ├── admin.css
+│   └── style.css
+├── data
+│   └── instagram_data.json
+├── inspiration
+│   ├── cielrose_index.html
+│   ├── cielrose_logic.js
+│   ├── lecon_sur_cielrose.md
+│   ├── main_js.LNmjN1ly.js
+│   └── usage_inspiration.md
+├── js
+│   ├── admin.js
+│   ├── ambilight.js
+│   ├── animations.js
+│   ├── main.js
+│   ├── preloader.js
+│   ├── transitions.js
+│   └── utils.js
+├── projects
+├── .gitignore
+├── 404.html
+├── admin.html
+├── all-projects.html
+├── auto_crop.py
+├── CNAME
+├── gotreal_auto_fetcher.py
+├── index.html
+├── project-template.html
+├── robots.txt
+├── scan_portfolio.py
+├── scan_portfolio_2026-03-02_15-15-15.txt
+└── scan_portfolio_2026-03-02_16-02-15.txt
+
+====================================================
+
+--- VERSION PUBLIQUE (GitHub - Respecte .gitignore) ---
+.
+├── assets
+├── css
+│   └── style.css
+├── js
+│   ├── ambilight.js
+│   ├── animations.js
+│   ├── main.js
+│   ├── preloader.js
+│   ├── transitions.js
+│   └── utils.js
+├── projects
+├── .gitignore
+├── 404.html
+├── all-projects.html
+├── CNAME
+├── gotreal_auto_fetcher.py
+├── index.html
+├── project-template.html
+├── robots.txt
+├── scan_portfolio_2026-03-02_15-15-15.txt
+└── scan_portfolio_2026-03-02_16-02-15.txt
+
+====================================================
+Fin du scan généré par Antigravity.

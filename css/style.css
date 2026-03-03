@@ -29,7 +29,7 @@ video {
 }
 
 body {
-    /* Dark Tech: dÃ©gradÃ© radial sombre + scanline */
+    /* Dark Tech: dégradé radial sombre + scanline */
     background-color: #000000;
     background:
         linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
@@ -37,7 +37,7 @@ body {
     background-size: 100% 4px, cover;
     color: var(--text-color);
     font-family: var(--font-ui);
-    overflow: hidden;
+    overflow-x: hidden;
     width: 100vw;
     min-height: 100vh;
     position: relative;
@@ -61,7 +61,6 @@ h3 {
     width: 100vw;
     height: 100vh;
     background-color: #fff1f2;
-    /* Fond clair rosÃ© pour le mesh */
     z-index: 9999;
     display: flex;
     justify-content: center;
@@ -120,15 +119,12 @@ h3 {
     0% {
         transform: translate(0, 0) scale(1);
     }
-
     33% {
         transform: translate(10vw, 5vh) scale(1.1);
     }
-
     66% {
         transform: translate(-5vw, 15vh) scale(0.9);
     }
-
     100% {
         transform: translate(5vw, -5vh) scale(1);
     }
@@ -142,7 +138,6 @@ h3 {
 .preloader-text {
     font-family: 'Syne', sans-serif;
     font-size: clamp(3rem, 10vw, 6rem);
-    /* Logo plus imposant */
     font-weight: 800;
     letter-spacing: -0.02em;
     display: block;
@@ -194,7 +189,6 @@ a.nav-btn:hover {
 .accent-red {
     color: var(--accent-red);
     text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-    /* Effet nÃ©on / REC */
 }
 
 /* =========================================
@@ -217,7 +211,6 @@ a.nav-btn:hover {
     top: 0;
 }
 
-/* Titre projet centrÃ© dans la navbar â€” rÃ©mplace l'overlay centrÃ© */
 #header-project-title {
     position: absolute;
     left: 50%;
@@ -233,14 +226,12 @@ a.nav-btn:hover {
     transition: opacity 0.5s ease;
 }
 
-/* MasquÃ© quand les contrÃ´les se cachent */
 body.controls-hidden #header-project-title {
     opacity: 0;
 }
 
 .camera-frame-bottom {
     display: none;
-    /* CielRose replacÃ© par la timeline centrÃ© */
 }
 
 /* =========================================
@@ -248,7 +239,6 @@ body.controls-hidden #header-project-title {
    ========================================= */
 .cielrose-timeline {
     position: fixed;
-    /* MasquÃ© par dÃ©faut sur les pages projet, affichÃ© uniquement sur la home */
     display: none;
     bottom: 10%;
     left: 50%;
@@ -258,7 +248,6 @@ body.controls-hidden #header-project-title {
     display: block;
     transform: translateX(-50%);
     width: 60vw;
-    /* AlignÃ© sous la vidÃ©o 40vw */
     text-align: justify;
     font-family: var(--font-ui);
     color: var(--text-color);
@@ -268,15 +257,12 @@ body.controls-hidden #header-project-title {
     letter-spacing: 0.1em;
 }
 
-/* Container parent des ticks et numbers pour positionner le curseur en absolu */
 .cielrose-ticks {
     display: block;
     width: 100%;
     position: relative;
 }
 
-/* Curseur CSS pur — triangle descendant avec pulsé glow .
-   Aucun caractère spécial HTML : le visuel est 100% CSS */
 .cielrose-cursor {
     position: absolute;
     top: 2px;
@@ -289,7 +275,6 @@ body.controls-hidden #header-project-title {
     transition: left 0.6s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* Triangle pointé vers le bas — en CSS border trick */
 .cielrose-cursor::before {
     content: '';
     display: block;
@@ -303,13 +288,11 @@ body.controls-hidden #header-project-title {
 }
 
 @keyframes cursorPulse {
-
     0%,
     100% {
         opacity: 1;
         filter: drop-shadow(0 0 6px var(--active-color, var(--accent-cyan)));
     }
-
     50% {
         opacity: 0.5;
         filter: drop-shadow(0 0 12px var(--active-color, var(--accent-cyan)));
@@ -319,7 +302,6 @@ body.controls-hidden #header-project-title {
 .cielrose-ticks pre {
     font-family: var(--font-ui);
     letter-spacing: 0.45vw;
-    /* Astuce pour espacer les ticks textuels */
     margin-bottom: 0.5rem;
     color: var(--text-dim);
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
@@ -339,7 +321,6 @@ body.controls-hidden #header-project-title {
     color: var(--text-dim);
 }
 
-/* Numéro actif — couleur dynamique via --active-color injecté par JS */
 .cielrose-numbers span.active {
     color: var(--active-color, var(--accent-cyan));
     font-weight: bold;
@@ -351,12 +332,10 @@ body.controls-hidden #header-project-title {
 }
 
 @keyframes numberGlow {
-
     0%,
     100% {
         text-shadow: 0 0 6px var(--active-color, var(--accent-cyan)), 0 0 16px var(--active-color, var(--accent-cyan));
     }
-
     50% {
         text-shadow: 0 0 14px var(--active-color, var(--accent-cyan)), 0 0 32px var(--active-color, var(--accent-cyan));
     }
@@ -369,7 +348,6 @@ body.controls-hidden #header-project-title {
 .scroll-indicator,
 .global-sound-control {
     pointer-events: auto;
-    /* RÃ©activer les clics sur les Ã©lÃ©ments interactifs */
 }
 
 .scroll-indicator {
@@ -404,7 +382,6 @@ body.controls-hidden #header-project-title {
 .main-nav {
     display: flex;
     gap: 4rem;
-    /* Wide gaps between nav elements like Ciel Rose */
 }
 
 .project-info {
@@ -430,13 +407,11 @@ body.controls-hidden #header-project-title {
 }
 
 @keyframes blink {
-
     0%,
     100% {
         opacity: 1;
         text-shadow: 0 0 10px var(--accent-red);
     }
-
     50% {
         opacity: 0.3;
         text-shadow: none;
@@ -455,32 +430,22 @@ body.controls-hidden #header-project-title {
     position: relative;
 }
 
-/* Layout CielRose : vidÃ©o centrÃ©e en box 16:9 */
 .video-wrapper {
     position: relative;
     width: 58vw;
     aspect-ratio: 16 / 9;
     cursor: pointer;
     overflow: visible;
-    /* permet au canvas ambilight de dÃ©border */
     flex-shrink: 0;
     isolation: isolate;
-    /* crÃ©e un nouveau stacking context */
 }
 
-.video-wrapper:hover {
-    /* Pas de zoom, juste un curseur */
-    cursor: pointer;
-}
-
-/* Container pour les vidÃ©os "slide" */
 .slider-container {
     position: relative;
     width: 100%;
     height: 100%;
     overflow: hidden;
     z-index: 1;
-    /* au-dessus du canvas ambilight */
 }
 
 .slide-video {
@@ -490,38 +455,30 @@ body.controls-hidden #header-project-title {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* CHANGEMENT ICI POUR SUPPRIMER LES BANDES SUR L'ACCUEIL */
-    /* Transparent pour laisser passer l'Ambilight en 9:16 (meme si maitenant on cover, on le garde par securite) */
     background: transparent;
     pointer-events: none;
 }
 
-/* Canvas Ambilight â€” halo de couleurs derriÃ¨re la vidÃ©o */
 #ambilight-canvas {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 140%;
-    /* dÃ©borde de 20% de chaque cÃ´tÃ© */
     height: 140%;
     z-index: 0;
-    /* SOUS le slider-container */
     pointer-events: none;
     filter: blur(50px) saturate(1.5);
     opacity: 0.85;
     border-radius: 50%;
-    /* effet "halo" plus organique */
     mix-blend-mode: screen;
     will-change: transform;
 }
 
-/* La vidÃ©o HTML reste visible */
 .home-container .slide-video {
     opacity: 1;
 }
 
-/* Ã‰tat Plein Ã©cran (ajoutÃ© via JS/GSAP) */
 .video-wrapper.is-expanded {
     width: 100vw !important;
     height: 100vh !important;
@@ -529,11 +486,9 @@ body.controls-hidden #header-project-title {
     border: none !important;
     cursor: default;
     z-index: 20;
-    /* On enlÃ¨ve le fond noir pour que l'Ambilight s'exprime sur les cÃ´tÃ©s libres */
     background-color: transparent !important;
 }
 
-/* Adaptation de la barre de contrÃ´le et du slider (par dÃ©faut 16:9) */
 .video-wrapper.is-expanded:not(.vertical-layout) .slider-container,
 .video-wrapper.is-expanded:not(.vertical-layout) .video-immersive-ui {
     margin: 0 auto;
@@ -543,7 +498,6 @@ body.controls-hidden #header-project-title {
     right: 0;
 }
 
-/* Adaptation et Crop (Rogner) si la vidÃ©o est dÃ©tectÃ©e comme verticale (9:16) */
 .video-wrapper.is-expanded.vertical-layout .slider-container,
 .video-wrapper.is-expanded.vertical-layout .video-immersive-ui {
     margin: 0 auto;
@@ -553,7 +507,6 @@ body.controls-hidden #header-project-title {
     right: 0;
 }
 
-/* Redimensionnement automatique de la box de la page d'accueil en 9:16 */
 .home-container .video-wrapper.vertical-layout {
     aspect-ratio: 9 / 16;
     width: 30vw;
@@ -561,20 +514,16 @@ body.controls-hidden #header-project-title {
     height: auto;
     max-height: 68vh;
     margin: 0 auto;
-    /* Ensures flexbox centering works natively */
 }
 
-/* Si verticale, on ne remplit plus avec cover sur mobile/grille pour recadrer, mais on s'assure que le contenu dicte la taille */
 .video-wrapper.vertical-layout .slide-video {
     object-fit: cover;
 }
 
-/* En PLEIN ECRAN (is-expanded), une video verticale ne doit JAMAIS utiliser cover sinon on coupe une moitie de l'image. */
 .video-wrapper.is-expanded.vertical-layout .slide-video {
     object-fit: contain !important;
 }
 
-/* UI Immersive : titre au centre exact de la box vidÃ©o, contrÃ´les en bas */
 .video-immersive-ui {
     position: absolute;
     top: 0;
@@ -583,49 +532,39 @@ body.controls-hidden #header-project-title {
     height: 100%;
     display: grid;
     grid-template-rows: 1fr auto;
-    /* Haut : vide, Bas : footer */
     align-items: center;
     z-index: 21;
     pointer-events: none;
 }
 
-/* Homepage : UI globale cachee par defaut SAUF le video-header
-   (le titre et le real doivent etre TOUJOURS visibles en overlay) */
 .home-container .video-immersive-ui {
     opacity: 1;
-    /* l'UI container est visible (le header s'affiche) */
     pointer-events: none;
-    /* les elements cliquables sont geres individuellement */
 }
 
-/* Le FOOTER de controles lui reste cache par defaut sur la home */
 .home-container .video-footer {
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
 }
 
-/* Au hover : le footer des controles apparait */
 .home-container .video-wrapper:hover .video-footer {
     opacity: 1;
     pointer-events: auto;
 }
 
-/* Page projet : gÃ©rÃ© par JS (mousemove timer 2s) */
 .video-wrapper.is-expanded .video-immersive-ui {
     opacity: 1;
     pointer-events: auto;
     transition: opacity 0.5s ease;
 }
 
-/* Auto-hide : masquage progressive aprÃ¨s 2s sans mouvement */
 .video-wrapper.is-expanded .video-immersive-ui.controls-hidden {
     opacity: 0;
     pointer-events: none;
     cursor: none;
 }
 
-/* Zone du titre : centrÃ©e sur la homepage, top-left sur page projet */
 .video-header {
     position: absolute;
     top: 50%;
@@ -639,27 +578,17 @@ body.controls-hidden #header-project-title {
     pointer-events: none;
 }
 
-/* Repositionnement : masquÃ© sur les pages projet (titre dans le header) */
 .video-wrapper.is-expanded .video-header {
     display: none;
 }
 
-/* === AMBILIGHT SUR PAGES PROJET ===
-   Le canvas est maintenant DANS le video-wrapper.is-expanded.
-   Il hérite du même comportement que sur la home,
-   mais le projet-container a besoin d'être relative. */
 .project-container {
     position: relative;
     width: 100vw;
     min-height: 100vh;
 }
 
-/* Sur les pages projet (état is-expanded), le canvas ambilight
-   déborde autour de la vidéo comme sur la home — on garde les mêmes
-   règles de #ambilight-canvas (position absolute, 140% size)
-   et on l'écarte légèrement du haut pour ne pas géner l'UI header. */
 .video-wrapper.is-expanded #ambilight-canvas {
-    /* même positionnement que la home - canvas dans le wrapper */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -678,29 +607,11 @@ body.controls-hidden #header-project-title {
     width: 100%;
 }
 
-.video-title {
-    font-family: var(--font-ui);
-    font-size: 0.95rem;
-    font-weight: 400;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    margin: 0;
-    text-align: center;
-    transition: opacity 0.25s ease;
-    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 0, 0, 0.5);
-}
-
-/* ==== HOVER « OUVRIR PROJET » — Remplacement fluide du titre ====
-   Au hover : le titre et le rôle glissent vers le haut + se fondent.
-   "OUVRIR PROJET" monte depuis le bas pour les remplacer. */
 .home-container .video-wrapper .video-header {
     transition: none;
-    /* Les enfants gèrent leurs propres transitions */
     overflow: hidden;
 }
 
-/* Titre : glisse vers le haut et disparaît */
 .home-container .video-wrapper:hover .video-title {
     opacity: 0 !important;
     transform: translateY(-12px);
@@ -719,7 +630,6 @@ body.controls-hidden #header-project-title {
     transform: translateY(0);
 }
 
-/* Rôle (director) : disparaît aussi */
 .home-container .video-wrapper:hover .video-role {
     opacity: 0 !important;
     transform: translateY(-8px);
@@ -736,14 +646,12 @@ body.controls-hidden #header-project-title {
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
 }
 
-/* "OUVRIR PROJET" : monte depuis le bas */
 .home-container .video-wrapper .video-header::after {
     content: "OUVRIR PROJET";
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, 16px);
-    /* Démarre 16px en dessous */
     font-family: var(--font-ui);
     font-size: 0.8rem;
     font-weight: 500;
@@ -759,10 +667,8 @@ body.controls-hidden #header-project-title {
 .home-container .video-wrapper:hover .video-header::after {
     opacity: 1;
     transform: translate(-50%, -50%);
-    /* Centre parfait — position finale */
 }
 
-/* Footer des contrÃ´les : ancrÃ© en bas de la box vidÃ©o */
 .video-footer {
     position: absolute;
     bottom: 0;
@@ -777,7 +683,6 @@ body.controls-hidden #header-project-title {
     position: relative;
     width: 100%;
     height: 14px;
-    /* Zone de clic agrandie invisible */
     margin-bottom: 0.8rem;
     cursor: pointer;
 }
@@ -810,7 +715,6 @@ body.controls-hidden #header-project-title {
 .timeline:hover::before,
 .timeline:hover .timeline-progress {
     height: 8px;
-    /* Grossissement au survol style YouTube */
 }
 
 #btn-fullscreen {
@@ -834,7 +738,7 @@ body.controls-hidden #header-project-title {
 }
 
 /* =========================================
-   PAGE TOUS LES PROJETS
+   PAGE TOUS LES PROJETS & GRILLE BENTO
    ========================================= */
 .all-projects-page {
     width: 100vw;
@@ -858,28 +762,87 @@ body.controls-hidden #header-project-title {
     font-weight: 400;
 }
 
-.masonry-grid {
-    column-count: 4;
-    column-gap: 1rem;
-    width: 100%;
+/* --- FILTRES DE CATÉGORIES --- */
+.category-filters {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding-top: 2rem;
+}
+
+.filter-btn {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+    padding-bottom: 5px;
+    border-bottom: 2px solid transparent;
+}
+
+.filter-btn:hover {
+    color: #fff;
+}
+
+.filter-btn.active {
+    color: var(--accent-cyan);
+    border-bottom: 2px solid var(--accent-cyan);
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
+
+/* --- LE MOTEUR BENTO CSS --- */
+.projects-grid {
+    display: grid;
+    /* Colonnes d'au moins 320px */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    /* Hauteur FIXE d'une brique de base : 280px */
+    grid-auto-rows: 280px; 
+    gap: 15px;
+    grid-auto-flow: dense; /* Le Tetris magique anti-trous */
+    padding: 20px;
 }
 
 .grid-item {
-    break-inside: avoid;
-    margin-bottom: 1rem;
-    background-color: #111;
-    border-radius: 4px;
-    overflow: hidden;
-    cursor: pointer;
-    border: 1px solid var(--border-color);
     position: relative;
-    transition: border-color 0.3s ease;
-    height: auto;
-    display: block;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #050505;
+    border: 1px solid var(--border-color);
+    /* Taille par défaut (Moyen) : 1 colonne, 1 ligne */
+    grid-column: span 1;
+    grid-row: span 1;
+    transition: transform 0.3s ease, border-color 0.3s ease, opacity 0.5s ease;
 }
 
 .grid-item:hover {
     border-color: var(--accent-cyan);
+}
+
+/* --- LES TAILLES BENTO (Gérées par le JS) --- */
+.grid-item.bento-vertical {
+    grid-row: span 2; /* 2x plus haut */
+}
+
+.grid-item.bento-wide {
+    grid-column: span 2; /* 2x plus large */
+}
+
+.grid-item.bento-large {
+    grid-column: span 2; /* Géant : 2x large, 2x haut */
+    grid-row: span 2;
+}
+
+/* Protection Mobile : On force 1 colonne sur petit écran */
+@media (max-width: 768px) {
+    .grid-item.bento-wide,
+    .grid-item.bento-large {
+        grid-column: span 1;
+    }
 }
 
 .grid-label {
@@ -909,48 +872,16 @@ body.controls-hidden #header-project-title {
 
 .grid-content {
     width: 100%;
-    /* La hauteur est dictee par le ratio natif en inline style (ex: style="aspect-ratio: 720/1280") */
-    height: auto;
+    height: 100%;
     display: block;
-    /* Fallback si pas de inline style */
-    aspect-ratio: 16 / 9;
 }
 
 .grid-content video {
     width: 100%;
     height: 100%;
-    /* contain = jamais de crop, on voit TOUTE la video dans le bon ratio */
-    object-fit: contain;
+    object-fit: cover; /* Remplit la case parfaitement sans jamais déborder */
     display: block;
     background-color: #000;
-}
-
-/* Videos Verticales type Reels */
-.grid-item.tall .grid-content {
-    aspect-ratio: 9 / 16;
-}
-
-/* Videos Ultra-Larges type Cinema */
-.grid-item.wide .grid-content {
-    aspect-ratio: 21 / 9;
-}
-
-@media (max-width: 1200px) {
-    .masonry-grid {
-        column-count: 3;
-    }
-}
-
-@media (max-width: 800px) {
-    .masonry-grid {
-        column-count: 2;
-    }
-}
-
-@media (max-width: 500px) {
-    .masonry-grid {
-        column-count: 1;
-    }
 }
 
 /* =========================================
@@ -960,9 +891,7 @@ body.controls-hidden #header-project-title {
     width: 100vw;
     min-height: 100vh;
     background-color: #050505;
-    /* Un lÃ©gÃ¨rement autre noir pour dÃ©tacher */
     padding: 10vh 10vw;
-    /* Retrait du display:none pour permettre l'affichage direct */
 }
 
 .project-info-grid {
@@ -1009,14 +938,12 @@ body.controls-hidden #header-project-title {
     background: var(--border-color);
     outline: none;
     opacity: 0;
-    /* MasquÃ© par dÃ©faut */
     width: 0;
     transition: width 0.3s ease, opacity 0.3s ease, background 0.3s ease;
     cursor: pointer;
     border-radius: 2px;
 }
 
-/* Apparition au hover du wrapper ENTIER */
 .sound-wrapper:hover .volume-slider {
     opacity: 1;
     width: 60px;
@@ -1056,10 +983,6 @@ body.controls-hidden #header-project-title {
 /* =========================================
    AMBILIGHT MODE SWITCHER
    ========================================= */
-/* =========================================
-   AMBILIGHT SWITCHER (DROPDOWN)
-   ========================================= */
-
 .amb-dropdown-container {
     position: relative;
     display: flex;
@@ -1105,7 +1028,6 @@ body.controls-hidden #header-project-title {
     z-index: 300;
 }
 
-/* Pont invisible pour garder le hover actif entre le lien et la boÃ®te */
 .amb-dropdown::after {
     content: '';
     position: absolute;
@@ -1170,7 +1092,6 @@ body.controls-hidden #header-project-title {
     left: 50%;
     width: 100vw;
     height: 100vw;
-    /* cover logic */
     transform: translate(-50%, -50%);
     object-fit: cover;
     opacity: 0.15;
@@ -1272,15 +1193,12 @@ body.controls-hidden #header-project-title {
         transform: translateY(0);
         opacity: 1;
     }
-
     to {
         transform: translateY(-20px);
         opacity: 0;
     }
 }
 
-/* ==== TIMELINE NUMEROS CLIQUABLES ====
-   Hover sur les chiffres 01-11 de la CielRose timeline (pointer-events mis par JS) */
 #cielrose-timeline-numbers span {
     transition: color 0.2s ease, text-shadow 0.2s ease, transform 0.2s ease;
 }

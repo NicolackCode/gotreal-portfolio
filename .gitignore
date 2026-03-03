@@ -1,5 +1,6 @@
 # Fichiers lourds (Vidéos et formats non optimisés)
 assets/videos/*
+assets/previews/*
 *.psd
 *.tiff
 *.raw
