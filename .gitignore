@@ -1,35 +1,41 @@
-# Fichiers lourds (Vidéos et formats non optimisés)
-assets/videos/*
-assets/previews/*
-*.psd
-*.tiff
-*.raw
-*.bmp
-*.cr2
-*.nef
-*.mov
-*.mp4
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Données sensibles & Admin
-# data/
-# admin.html
-js/admin.js
-css/admin.css
-.env
-*.log
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Dossiers internes
-_brain/
-.agents/
-.gemini/
+# testing
+/coverage
 
-# Dépendances (au cas où)
-node_modules/
+# next.js
+/.next/
+/out/
 
-# Fichiers système
+# production
+/build
+
+# misc
 .DS_Store
-Thumbs.db
-desktop.ini
+*.pem
 
-scan_portfolio_*.txt
-__pycache__/
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
