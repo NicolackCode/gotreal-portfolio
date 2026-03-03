@@ -15,27 +15,35 @@ const storage = new Storage({
   },
 })
 
+// Détermine la qualité intrinsèque (pour le rank combiné V1)
 function getQualityScore(filename) {
-    if (filename.includes('_main') || filename.includes('_01') || filename.includes('_02') || filename.includes('_03') || filename.includes('_04')) return 4;
+    if (filename.includes('_main') || filename.includes('4K')) return 4;
+    // Si la vidéo a un _01 ou _02 c'est sûrement de la bonne captation multi, on donne un bonus léger
+    if (filename.match(/_0[1-9]/)) return 3;
     return 2;
 }
 
+// Nettoie pour avoir un nom de Projet Groupé ("Dossier")
 function extractDisplayTitle(filename) {
-    let title = filename.replace(/^\[.*?\]_/, '');
+    let title = filename.replace(/^\[.*?\]_/, ''); // Enlève [TOP1]
     title = title.replace(/_(\d+|main|NA|01|02|03|04|05|06|07|08|09|10|11)\.mp4$/, '');
     return title.replace(/_/g, ' ');
 }
 
 async function run() {
-    console.log("🚀 Lancement du scan du bucket...")
+    console.log("🚀 Lancement du scan du bucket pour générer Main + Carousel...")
     const [files] = await storage.bucket(bucketName).getFiles()
     
     const projectsMap = new Map()
 
+    // 1. On mappe les fichiers à "Dossiers Projet"
     files.forEach(file => {
         if (!file.name.endsWith('.mp4') && !file.name.endsWith('.webm')) return
         
         const name = file.name
+        const url = `https://storage.googleapis.com/${bucketName}/${name}`
+
+        // Extraction Rangs
         let rank = 'RAW'
         if (name.includes('[TOP3]')) rank = 'TOP3'
         else if (name.includes('[TOP2]')) rank = 'TOP2'
@@ -51,32 +59,46 @@ async function run() {
                 title: baseTitle,
                 client: 'Archive V1',
                 description: '',
-                video_url: `https://storage.googleapis.com/${bucketName}/${name}`,
-                globalScore: globalScore
+                globalScore: globalScore,
+                files: [ { name, url, isMain: name.includes('_main') } ]
             })
         } else {
             const existing = projectsMap.get(baseTitle)
+            existing.files.push({ name, url, isMain: name.includes('_main') })
+            // On retient le meilleur score de toutes les vidéos du dossier de ce projet
             if (globalScore > existing.globalScore) {
-                existing.video_url = `https://storage.googleapis.com/${bucketName}/${name}`
                 existing.globalScore = globalScore
             }
         }
     })
 
     const allProjects = Array.from(projectsMap.values())
+    // 2. On trie les projets (Dossiers) par meilleur Score pour déterminer L'ORDRE D'AFFICHAGE (Rank Supabase final)
     allProjects.sort((a, b) => b.globalScore - a.globalScore)
 
-    // Attribuer le rank définitif
-    const finalProjects = allProjects.map((p, index) => ({
-        title: p.title,
-        client: p.client,
-        description: p.description,
-        video_url: p.video_url,
-        rank: index + 1
-    }))
+    // 3. Dispatch Main / Carousel
+    const finalProjects = allProjects.map((p, index) => {
+        let main = p.files.find(f => f.isMain)
+        // S'il ya pas de _main, on prend soit le 01, soit la plus grosse qualité, ici on simplifie en prenant la 1ère.
+        if (!main) {
+            main = p.files[0]
+        }
+        
+        // Tout le reste va dans le carrousel
+        const carousel = p.files.filter(f => f.url !== main.url).map(f => f.url)
+
+        return {
+            title: p.title,
+            client: p.client,
+            description: p.description,
+            main_video_url: main.url,
+            carousel_urls: carousel,
+            rank: index + 1
+        }
+    })
 
     fs.writeFileSync('./public/v1_projects.json', JSON.stringify(finalProjects, null, 2))
-    console.log(`✅ Fichier /public/v1_projects.json généré avec ${finalProjects.length} projets classés !`)
+    console.log(`✅ JSON regénéré : ${finalProjects.length} Projets classés (avec Master et Carrousels) !`)
 }
 
 run()

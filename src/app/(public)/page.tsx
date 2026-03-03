@@ -16,14 +16,19 @@ export default async function HomePage() {
     }
   )
 
-  const { data: projects } = await supabase
+  const { data: projectsData } = await supabase
     .from('projects')
     .select('*')
     .order('rank', { ascending: true })
 
+  const projects = (projectsData || []).map(p => ({
+      ...p,
+      video_url: p.main_video_url
+  }))
+
   return (
     <main className="relative w-full h-screen overflow-hidden bg-black">
-      <AmbilightPlayer projects={projects || []} />
+      <AmbilightPlayer projects={projects} />
     </main>
   )
 }
