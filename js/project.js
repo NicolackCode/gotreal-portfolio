@@ -1,42 +1,82 @@
-// js/project.js - Injection des données & Lecteur Vidéo Custom
+// js/project.js - Version V1 Corrigée (F5 & Barba proof)
 
-document.addEventListener("DOMContentLoaded", async () => {
-    // === 1. CHARGEMENT DES DONNÉES JSON ===
+document.addEventListener("DOMContentLoaded", () => window.deployProject());
+
+window.deployProject = async function(data) {
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('id');
-
     if (!projectId) return;
 
     try {
-        const response = await fetch('/data/projects.json');
-        const projects = await response.json();
-        const project = projects.find(p => p.id === projectId);
+        let projects = data || window.allProjects;
+        if (!projects) {
+            const response = await fetch('/data/projects.json');
+            projects = await response.json();
+            window.allProjects = projects;
+        }
 
-        if (!project) return;
+        // 1. MATCHING INTELLIGENT (Fixe le bug du F5)
+        // On cherche soit l'ID exact, soit un ID qui contient le nom (ex: Crystal_Chardonnay)
+        const cleanSearch = projectId.toLowerCase().replace(/\[.*?\]_?/, '');
+        const project = projects.find(p => 
+            p.id === projectId || 
+            p.id.toLowerCase().includes(cleanSearch)
+        );
 
-        // Injection des textes
+        if (!project) {
+            console.error("Projet non trouvé :", projectId);
+            // On montre quand même la page pour éviter l'écran noir
+            if (typeof gsap !== 'undefined') gsap.to(".project-container", { opacity: 1 });
+            return;
+        }
+
+        // 2. INJECTION DES TEXTES SÉCURISÉE
         const cleanTitle = project.displayTitle || project.id.replace(/\[.*?\]_?/, '').replace(/_/g, ' ');
         document.getElementById('title-current').textContent = cleanTitle;
         document.getElementById('role-main').textContent = project.category || "DIRECTOR";
+        document.getElementById('pt-synopsis').textContent = project.synopsis || "Aucune description disponible.";
 
-        document.getElementById('pt-synopsis').textContent = project.synopsis || "Aucune description disponible pour ce projet.";
-        document.getElementById('project-credits-list').innerHTML = project.credits ? project.credits.replace(/\n/g, '<br>') : "-";
+        // Sécurité Crédits : on vérifie si c'est du texte avant le replace
+        const creditsEl = document.getElementById('project-credits-list');
+        if (creditsEl) {
+            if (typeof project.credits === 'string') {
+                creditsEl.innerHTML = project.credits.replace(/\n/g, '<br>');
+            } else {
+                creditsEl.innerHTML = "-";
+            }
+        }
 
-        // Injection de la vidéo (Cherche la version _main)
+        // 3. INJECTION DE LA VIDÉO
         const videoElement = document.getElementById('video-current');
         const baseGCS = "https://storage.googleapis.com/gotreal-assets-paris"; 
         
-        // 👇 LIGNE MODIFIÉE 👇
-        videoElement.crossOrigin = "anonymous";
-        videoElement.src = `${baseGCS}/assets/videos/${encodeURIComponent(project.category)}/${encodeURIComponent(project.id)}_main.mp4`;
-        videoElement.load();
+        if (videoElement) {
+            videoElement.crossOrigin = "anonymous";
+            // On s'assure que l'URL est propre
+            const category = project.category || "Commercials";
+            videoElement.src = `${baseGCS}/assets/videos/${encodeURIComponent(category)}/${encodeURIComponent(project.id)}.mp4`;
+            videoElement.load();
+            
+            // On force le play après un petit délai
+            setTimeout(() => {
+                videoElement.play().catch(() => {
+                    document.addEventListener('click', () => videoElement.play(), { once: true });
+                });
+            }, 200);
+        }
 
-        // Relancer l'Ambilight
+        // 4. ON LÈVE LE RIDEAU (C'est ça qui manquait !)
+        if (typeof gsap !== 'undefined') {
+            gsap.to(".project-container", { opacity: 1, duration: 0.8, ease: "power2.out" });
+        }
+
         if (typeof window.initAmbilight === 'function') window.initAmbilight();
 
     } catch (error) {
         console.error("Erreur de chargement du projet :", error);
+        if (typeof gsap !== 'undefined') gsap.to(".project-container", { opacity: 1 });
     }
+};
 
     // === 2. LOGIQUE DU LECTEUR VIDÉO CUSTOM ===
     const video = document.getElementById('video-current');
@@ -113,4 +153,3 @@ document.addEventListener("DOMContentLoaded", async () => {
             btnFullscreen.textContent = "PLEIN ECRAN";
         }
     });
-});
