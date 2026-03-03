@@ -3,22 +3,37 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 
+type ProjectData = {
+  id?: string
+  title?: string
+  client?: string
+  description?: string
+  video_url?: string
+}
+
 type ProjectFormProps = {
-  project?: any
+  project?: ProjectData | null
   onClose: () => void
   onSuccess: () => void
+}
+
+type MediaItem = {
+  name: string
+  url: string
+  updated?: string
+  size?: string
 }
 
 export default function ProjectForm({ project, onClose, onSuccess }: ProjectFormProps) {
   const [title, setTitle] = useState(project?.title || '')
   const [client, setClient] = useState(project?.client || '')
-  const [description, setDescription] = useState(project?.description || '')
+  const [description] = useState(project?.description || '') // eslint-disable-next-line @typescript-eslint/no-unused-vars
   
   const [uploadMode, setUploadMode] = useState<'new' | 'existing'>('existing')
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [selectedMediaUrl, setSelectedMediaUrl] = useState<string>(project?.video_url || '')
   
-  const [mediaList, setMediaList] = useState<any[]>([])
+  const [mediaList, setMediaList] = useState<MediaItem[]>([])
   const [loadingMedia, setLoadingMedia] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const supabase = createClient()

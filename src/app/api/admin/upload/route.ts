@@ -42,7 +42,6 @@ export async function POST(req: Request) {
 
     // Nom de fichier 100% sécurisé (UUID) pour éviter tout caractère illégal dans l'URL signée
     const fileExtension = filename.split('.').pop() || 'mp4'
-    const crypto = require('crypto')
     const uniqueId = crypto.randomUUID()
     const fileDestination = `videos/${Date.now()}_${uniqueId}.${fileExtension}`
     
