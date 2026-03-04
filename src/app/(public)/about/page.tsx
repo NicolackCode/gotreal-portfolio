@@ -22,7 +22,7 @@ export default function AboutPage() {
             PRÉSENTATION
           </p>
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-sans font-black leading-[1.1] tracking-tighter max-w-4xl text-zinc-100 uppercase">
-            J&apos;AI NOM GAUTHIER MESSAGER. ALIAS GOTREAL, JE SUIS RÉALISATEUR, CHEF OPÉRATEUR ET MONTEUR VIDÉO.
+            JE M&apos;APPELLE GAUTHIER MESSAGER. <br className="hidden md:block"/>ALIAS GOTREAL. <br className="hidden md:block"/>JE SUIS RÉALISATEUR, CHEF OPÉRATEUR ET MONTEUR VIDÉO.
           </h1>
         </section>
 
