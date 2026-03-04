@@ -11,7 +11,7 @@ type Project = {
 
 export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
   const [currentIndex, setCurrentIndex] = useState(0) // Variable réactivée pour naviguer entre Main Video et Carrousel
-  const mode = 2; // Force mode Hardcore nativement pour toutes les vidéos
+  const mode: number = 2; // Force mode Hardcore nativement pour toutes les vidéos
   const [isMuted, setIsMuted] = useState(true)
   const [isPlaying, setIsPlaying] = useState(true)
   
