@@ -9,7 +9,9 @@ type ProjectData = {
   client?: string
   description?: string
   main_video_url?: string
-  carousel_urls?: string[]
+  carousel_urls?: string | string[]
+  rank?: number
+  priority?: string
 }
 
 type ProjectFormProps = {
@@ -26,12 +28,28 @@ type MediaItem = {
 }
 
 export default function ProjectForm({ project, onClose, onSuccess }: ProjectFormProps) {
+  // Parse carousel if it was stored as string instead of Array (workaround constraint)
+  let initialCarousel: string[] = []
+  if (project?.carousel_urls) {
+    if (typeof project.carousel_urls === 'string') {
+      try {
+        initialCarousel = JSON.parse(project.carousel_urls)
+      } catch {
+        initialCarousel = []
+      }
+    } else if (Array.isArray(project.carousel_urls)) {
+      initialCarousel = project.carousel_urls
+    }
+  }
+
   const [title, setTitle] = useState(project?.title || '')
   const [client, setClient] = useState(project?.client || '')
+  const [rank, setRank] = useState(project?.rank || 0)
+  const [priority, setPriority] = useState(project?.priority || '')
   
   // States des vidéos
   const [mainVideoUrl, setMainVideoUrl] = useState<string>(project?.main_video_url || '')
-  const [carouselUrls, setCarouselUrls] = useState<string[]>(project?.carousel_urls || [])
+  const [carouselUrls, setCarouselUrls] = useState<string[]>(initialCarousel)
   
   // Mode de sélection (main vs carousel) pour UI
   const [selectingFor, setSelectingFor] = useState<'main' | 'carousel'>('main')
@@ -80,9 +98,12 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
       const projectData = {
         title,
         client,
-        description: '', // gardé vide pour l'instant
+        description: project?.description || '',
+        rank,
+        priority: priority || null,
         main_video_url: mainVideoUrl,
-        carousel_urls: carouselUrls
+        video_url: mainVideoUrl, // Patcher la contrainte NOT NULL de l'ancienne DB
+        carousel_urls: JSON.stringify(carouselUrls) // Stocker en string si la colonne est type Text
       }
 
       if (project?.id) {
@@ -92,8 +113,8 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
       }
 
       onSuccess()
-    } catch (err) {
-      alert('Error updating project. See console.')
+    } catch (err: unknown) {
+      alert(`Erreur d'édition : ${err instanceof Error ? err.message : String(err)}`)
       console.error(err)
     } finally {
       setIsUploading(false)
@@ -130,6 +151,31 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
                 onChange={e => setClient(e.target.value)}
                 className="w-full bg-black border border-zinc-700 p-2 focus:border-white outline-none" 
               />
+            </div>
+            
+            <div>
+              <label className="block text-xs uppercase text-zinc-500 mb-1">Rang d&apos;affichage (1 = Premier)</label>
+              <input 
+                type="number" 
+                value={rank}
+                onChange={e => setRank(parseInt(e.target.value) || 0)}
+                className="w-full bg-black border border-zinc-700 p-2 focus:border-white outline-none" 
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs uppercase text-zinc-500 mb-1">Badge Privilège (Optionnel)</label>
+              <select 
+                value={priority}
+                onChange={e => setPriority(e.target.value)}
+                className="w-full bg-black border border-zinc-700 p-2 focus:border-white outline-none text-zinc-300" 
+              >
+                <option value="">Aucun Poids (Tri Normal)</option>
+                <option value="TOP 1">TOP 1 (Priorité MAX)</option>
+                <option value="TOP 2">TOP 2 (Très Haute)</option>
+                <option value="TOP 3">TOP 3 (Haute)</option>
+                <option value="RAW">RAW (Intermédiaire)</option>
+              </select>
             </div>
           </div>
 

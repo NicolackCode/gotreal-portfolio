@@ -12,3 +12,15 @@ body {
   color: var(--color-foreground);
   /* Optionnel : cacher la scrollbar native pour une UI plus "cielrose" si nécessaire plus tard */
 }
+
+/* Idle state pour le lecteur Ambilight */
+body.video-idle * {
+  cursor: none !important;
+}
+
+body.video-idle header,
+body.video-idle #project-back-button {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.5s ease-out;
+}

@@ -25,8 +25,8 @@ export default function AdminLayout({
             GOTREAL
           </Link>
           <nav className="text-sm tracking-widest text-zinc-500 uppercase flex gap-4 hidden sm:flex">
-            <Link href="/admin/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
-            <Link href="/admin/media" className="hover:text-white transition-colors">Media Library</Link>
+            <Link href="/admin/dashboard" className="hover:text-white transition-colors">Liste Importer</Link>
+            <Link href="/admin/media" className="hover:text-white transition-colors">Médiathèque</Link>
           </nav>
         </div>
         <button 
