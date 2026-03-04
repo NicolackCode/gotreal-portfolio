@@ -1,32 +1,96 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 
 export default function PublicHeader() {
+  const [isOpen, setIsOpen] = useState(false)
+
+  // Le mode brutaliste demande un très haut contraste. 
+  // On utilise mix-blend-difference pour s'assurer que le header est visible sur les vidéos.
   return (
-    <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-start p-6 lg:p-10 mix-blend-difference pointer-events-none">
-      <div className="flex flex-col gap-1 pointer-events-auto">
-        <Link href="/" className="text-2xl font-sans font-bold tracking-widest uppercase hover:text-zinc-400 transition-colors">
-          GOTREAL
-        </Link>
-        <span className="text-[10px] lg:text-xs font-mono uppercase tracking-wider text-zinc-300 leading-tight mt-1">
-          DIRECTOR & DOP<br/>
-          PUBLICITÉS, CLIPS MUSICAUX ET FILMS.
-        </span>
+    <>
+      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-start p-6 lg:p-10 mix-blend-difference pointer-events-none">
+        
+        {/* LOGO TITLE MASSIVE */}
+        <div className="flex flex-col gap-1 pointer-events-auto">
+          <Link 
+            href="/" 
+            className="text-2xl md:text-3xl font-sans font-black tracking-tighter uppercase hover:opacity-70 transition-opacity"
+            onClick={() => setIsOpen(false)}
+          >
+            GOTREAL
+          </Link>
+          <span className="text-[10px] font-mono uppercase tracking-[0.3em] opacity-80 mt-1">
+            DIRECTOR & DOP
+          </span>
+        </div>
+        
+        {/* MENUS BURGER BUTTON */}
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="pointer-events-auto text-xs md:text-sm font-sans font-bold uppercase tracking-widest hover:opacity-70 transition-opacity"
+        >
+          [ MENU ]
+        </button>
+      </header>
+
+      {/* FULL SCREEN OVERLAY MENU - BRUTALIST STYLE */}
+      <div 
+        className={`fixed inset-0 bg-black z-[100] text-white flex flex-col justify-between p-6 lg:p-10 transition-transform duration-500 will-change-transform ${
+          isOpen ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="flex justify-between items-start">
+          <div className="text-2xl md:text-3xl font-sans font-black tracking-tighter uppercase opacity-50">
+            GOTREAL
+          </div>
+          <button 
+            onClick={() => setIsOpen(false)}
+            className="text-xs md:text-sm font-sans font-bold uppercase tracking-widest hover:text-zinc-500 transition-colors"
+          >
+            [ FERMER ]
+          </button>
+        </div>
+
+        <nav className="flex flex-col gap-8 md:gap-12 mt-20">
+          <Link 
+            href="/all-projects" 
+            onClick={() => setIsOpen(false)}
+            className="text-5xl md:text-7xl lg:text-8xl font-sans font-black uppercase tracking-tighter hover:text-zinc-500 transition-colors origin-left hover:scale-[1.02]"
+          >
+            PROJETS.
+          </Link>
+          <Link 
+            href="/about" 
+            onClick={() => setIsOpen(false)}
+            className="text-5xl md:text-7xl lg:text-8xl font-sans font-black uppercase tracking-tighter hover:text-zinc-500 transition-colors origin-left hover:scale-[1.02]"
+          >
+            À PROPOS.
+          </Link>
+          <a 
+            href="mailto:gotrealisation@gmail.com?subject=Nouvelle collaboration / Demande de projet&body=Bonjour Gauthier,%0A%0AJe te contacte pour évoquer un futur projet avec toi...%0A%0A[Détaille ici ton besoin, le style, les dates...]" 
+            onClick={() => setIsOpen(false)}
+            className="text-5xl md:text-7xl lg:text-8xl font-sans font-black uppercase tracking-tighter hover:text-zinc-500 transition-colors origin-left hover:scale-[1.02]"
+          >
+            CONTACT.
+          </a>
+        </nav>
+
+        <div className="flex justify-between items-end pb-8">
+          <span className="text-xs font-mono uppercase tracking-widest text-zinc-500 max-w-[200px]">
+            PUBLICITÉS, CLIPS MUSICAUX ET FILMS.
+          </span>
+          <a 
+            href="https://instagram.com/gotreaaal" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs font-mono uppercase tracking-widest border border-zinc-700 px-4 py-2 hover:bg-white hover:text-black transition-colors"
+          >
+            INSTAGRAM
+          </a>
+        </div>
       </div>
-      
-      <nav className="flex gap-6 lg:gap-10 pointer-events-auto mt-1 hidden md:flex">
-        <Link href="/about" className="text-[10px] lg:text-xs font-mono font-bold tracking-[0.2em] relative group uppercase hover:text-zinc-400 transition-colors">
-          À PROPOS
-          <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-white transition-all group-hover:w-full"></span>
-        </Link>
-        <Link href="/all-projects" className="text-[10px] lg:text-xs font-mono font-bold tracking-[0.2em] relative group uppercase hover:text-zinc-400 transition-colors">
-          TOUS LES PROJETS
-          <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-white transition-all group-hover:w-full"></span>
-        </Link>
-        <a href="mailto:gotrealisation@gmail.com" className="text-[10px] lg:text-xs font-mono font-bold tracking-[0.2em] relative group uppercase hover:text-zinc-400 transition-colors">
-          CONTACT
-          <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-white transition-all group-hover:w-full"></span>
-        </a>
-      </nav>
-    </header>
+    </>
   )
 }

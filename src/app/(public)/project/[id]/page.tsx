@@ -63,8 +63,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       
       {/* BOUTON RETOUR (Mix blend, z-40 pour passer SOUS la div Ambilight passée en Full Screen) */}
       <div id="project-back-button" className="absolute top-24 lg:top-32 left-8 z-40 pointer-events-auto mix-blend-difference hidden md:block">
-        <Link href="/all-projects" className="text-xs font-mono uppercase tracking-[0.2em] text-white hover:text-zinc-400 border-b-2 border-transparent hover:border-white transition-all pb-1">
-          ← Retour à la galerie
+        <Link href="/all-projects" className="text-xs font-sans font-bold uppercase tracking-widest text-white hover:opacity-50 transition-opacity">
+          [ RETOUR AUX PROJETS ]
         </Link>
       </div>
 
@@ -102,7 +102,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                 {carouselItems.map((url, i) => (
                   <div 
                     key={i} 
-                    className="flex-none h-[50vh] md:h-[60vh] xl:h-[70vh] max-w-[90vw] bg-transparent border border-zinc-900 relative group overflow-hidden snap-center rounded-sm"
+                    className="flex-none h-[50vh] md:h-[60vh] xl:h-[70vh] max-w-[90vw] bg-transparent border border-zinc-900 relative group overflow-hidden snap-center"
                   >
                      <video 
                        src={url}
@@ -120,9 +120,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </section>
       
       {/* FOOTER PUBLIC */}
-      <footer className="w-full border-t border-zinc-900 py-12 text-center relative z-20 bg-black">
-        <p className="font-mono text-zinc-600 text-[10px] uppercase tracking-widest">
-           © {new Date().getFullYear()} GOTREAL - All Rights Reserved.
+      <footer className="w-full border-t border-zinc-900 py-12 text-center relative z-20 bg-black flex flex-col items-center gap-4">
+        <p className="font-sans font-bold text-zinc-500 text-[10px] md:text-xs uppercase tracking-[0.3em]">
+           © {new Date().getFullYear()} GOTREAL - ALL RIGHTS RESERVED.
         </p>
       </footer>
     </main>

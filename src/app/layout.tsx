@@ -1,15 +1,16 @@
 import type { Metadata } from 'next'
-import { Syne, JetBrains_Mono } from 'next/font/google'
+import { Space_Grotesk, Inter } from 'next/font/google'
+import InitialLoader from '@/components/ui/InitialLoader'
 import './globals.css'
 
-const syne = Syne({
-  variable: '--font-syne',
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-space-grotesk',
   subsets: ['latin'],
   display: 'swap',
 })
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-jb-mono',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
   display: 'swap',
 })
@@ -28,8 +29,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr" className={`${syne.variable} ${jetbrainsMono.variable} antialiased`}>
-      <body className="bg-black text-white font-mono min-h-screen overflow-x-hidden selection:bg-white selection:text-black">
+    <html lang="fr" className={`${spaceGrotesk.variable} ${inter.variable} antialiased`}>
+      <body className="bg-black text-white font-sans min-h-screen overflow-x-hidden selection:bg-white selection:text-black">
+        <InitialLoader />
         {children}
       </body>
     </html>

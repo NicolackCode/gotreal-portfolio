@@ -34,8 +34,8 @@ export default async function AllProjectsPage() {
       
       {/* FOOTER PUBLIC */}
       <footer className="w-full border-t border-zinc-900 py-12 text-center mt-20">
-        <p className="font-mono text-zinc-600 text-[10px] md:text-xs uppercase tracking-widest">
-           © {new Date().getFullYear()} GOTREAL - All Rights Reserved.
+        <p className="font-sans font-bold text-zinc-500 text-[10px] md:text-xs uppercase tracking-[0.3em]">
+           © {new Date().getFullYear()} GOTREAL - ALL RIGHTS RESERVED.
         </p>
       </footer>
     </main>

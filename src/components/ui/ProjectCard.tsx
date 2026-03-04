@@ -75,7 +75,7 @@ export default function ProjectCard({ project, priorityLoad = false, globalIsMut
     <Link 
       href={`/project/${project.id}`}
       ref={containerRef}
-      className={`group relative block w-full h-full overflow-hidden bg-zinc-950 cursor-pointer rounded-md`}
+      className={`group relative block w-full h-full overflow-hidden bg-black border border-zinc-900 cursor-pointer`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -101,11 +101,11 @@ export default function ProjectCard({ project, priorityLoad = false, globalIsMut
       </div>
 
       {/* Titres Brutalist */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 ease-out z-10 bg-gradient-to-t from-black/90 to-transparent pointer-events-none">
-        <h3 className="text-white text-lg sm:text-2xl font-bold uppercase tracking-widest leading-none drop-shadow-md">
+      <div className="absolute inset-0 p-6 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-none z-10 bg-black/60 pointer-events-none">
+        <h3 className="text-white text-2xl sm:text-4xl font-sans font-black uppercase tracking-tighter leading-none mb-2">
           {project.title}
         </h3>
-        <p className="text-zinc-300 text-xs sm:text-sm font-mono mt-2 drop-shadow-md">
+        <p className="text-zinc-400 text-xs sm:text-sm font-mono uppercase tracking-[0.2em]">
           {project.client}
         </p>
       </div>

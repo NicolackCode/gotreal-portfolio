@@ -572,7 +572,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
                     onClick={toggleMute} 
                     className="hover:text-white transition-colors"
                   >
-                    <span className="hidden sm:inline">SOUND </span>
+                    <span className="hidden sm:inline">SON </span>
                     <span className="sm:hidden">VOL </span>
                     {isMuted ? 'OFF' : 'ON'}
                   </button>

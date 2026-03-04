@@ -43,12 +43,12 @@ export default async function HomePage() {
       </div>
 
       {/* BIG FAT LOGO CENTER */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center pointer-events-none">
-        <h1 className="text-white text-7xl md:text-9xl font-sans font-black uppercase tracking-widest mix-blend-difference opacity-90 drop-shadow-2xl">
+      <div className="relative z-10 flex flex-col items-center justify-center text-center pointer-events-none mix-blend-difference">
+        <h1 className="text-white text-[12vw] leading-none font-sans font-black uppercase tracking-tighter">
           GOTREAL
         </h1>
-        <p className="mt-6 font-mono text-zinc-300 text-xs md:text-sm tracking-[0.3em] uppercase mix-blend-difference">
-          Director, DOP & Editor
+        <p className="mt-2 font-mono text-zinc-400 text-xs sm:text-sm tracking-[0.4em] uppercase">
+          Director & DOP
         </p>
       </div>
 
@@ -56,7 +56,7 @@ export default async function HomePage() {
       <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
         <Link 
           href="/all-projects" 
-          className="text-white font-mono text-xs uppercase tracking-[0.2em] border border-white/30 px-8 py-3 hover:bg-white hover:text-black transition-all duration-500 backdrop-blur-sm"
+          className="text-white font-sans font-bold text-xs uppercase tracking-widest border border-zinc-700 px-8 py-4 hover:bg-white hover:text-black transition-colors"
         >
           Découvrir les Projets
         </Link>

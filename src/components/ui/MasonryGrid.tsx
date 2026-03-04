@@ -110,13 +110,13 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
           {/* TOUT CENTRÉ EN HAUT */}
           <button
             onClick={() => setActiveFilter('TOUT')}
-            className={`text-sm md:text-base font-mono tracking-[0.2em] transition-all uppercase px-4 py-2 mb-8 ${
+            className={`text-sm md:text-base font-sans font-black tracking-widest uppercase px-4 py-2 mb-8 ${
               activeFilter === 'TOUT' 
                 ? 'text-white border-b-2 border-white' 
                 : 'text-zinc-600 hover:text-zinc-300 border-b-2 border-transparent hover:border-zinc-700'
             }`}
           >
-            TOUT
+            ALL
           </button>
 
           {/* AUTRES CATEGORIES CENTREES EN DESSOUS */}
@@ -125,7 +125,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
               <button
                 key={cat}
                 onClick={() => setActiveFilter(cat)}
-                className={`text-[10px] md:text-sm font-mono tracking-[0.2em] transition-all uppercase px-2 py-1 ${
+                className={`text-[10px] md:text-sm font-sans font-bold tracking-widest uppercase px-2 py-1 ${
                   activeFilter === cat 
                     ? 'text-white border-b-2 border-white' 
                     : 'text-zinc-600 hover:text-zinc-300 border-b-2 border-transparent hover:border-zinc-700'
@@ -162,7 +162,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
             }
 
             return (
-              <div key={project.id} className={`shadow-2xl h-full w-full rounded-md overflow-hidden ${spanClass}`}>
+              <div key={project.id} className={`shadow-2xl h-full w-full overflow-hidden ${spanClass}`}>
                 <ProjectCard project={project} priorityLoad={index < 8} globalIsMuted={globalIsMuted} />
               </div>
             )
@@ -173,7 +173,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
       {/* Bouton global Unmute / Mute (Flottant bottom right) */}
       <button 
         onClick={() => setGlobalIsMuted(!globalIsMuted)}
-        className="fixed bottom-6 right-6 z-50 bg-black/80 backdrop-blur-sm border border-zinc-800 text-zinc-300 hover:text-white px-4 py-2 font-mono text-[10px] sm:text-xs uppercase tracking-[0.2em] rounded-full transition-all hover:scale-105"
+        className="fixed bottom-6 right-6 z-50 bg-black border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-900 px-4 py-3 font-sans font-bold text-[10px] sm:text-xs uppercase tracking-widest transition-colors shadow-2xl"
       >
         {globalIsMuted ? '🔇 SOUND OFF' : '🔊 SOUND ON'}
       </button>
