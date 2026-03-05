@@ -8,6 +8,21 @@ type Project = {
   title: string
   client: string
   video_url: string
+  rotation?: number
+}
+
+const getPlayerRotationStyle = (rot?: number): React.CSSProperties => {
+  if (rot === 90 || rot === -90) {
+    return { 
+      transform: `rotate(${rot}deg)`,
+      maxWidth: '100vh',
+      maxHeight: '100vw'
+    }
+  }
+  if (rot === 180) {
+    return { transform: 'rotate(180deg)' }
+  }
+  return {}
 }
 
 export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
@@ -354,6 +369,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
       }
       const hls = new Hls({
         autoStartLoad: true,
+        capLevelToPlayerSize: false,
         startLevel: -1
       })
       hlsRef.current = hls
@@ -687,7 +703,8 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
             <div className={`w-[100vw] h-full flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 pointer-events-none ${isDragging ? 'opacity-80 scale-90' : 'opacity-40 scale-75'}`} style={{ minWidth: '100vw', width: '100vw' }}>
               <video 
                 src={getPrevProject()?.video_url}
-                className="max-h-full max-w-full object-contain shadow-2xl"
+                className="max-h-full max-w-full object-contain shadow-2xl transition-transform duration-500"
+                style={getPlayerRotationStyle(getPrevProject()?.rotation)}
                 muted playsInline crossOrigin="anonymous" 
               />
             </div>
@@ -705,6 +722,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
             ref={videoRef}
             draggable={false}
             className="w-full h-full object-contain shadow-2xl transition-all duration-500 ease-in-out"
+            style={getPlayerRotationStyle(currentProject?.rotation)}
             autoPlay
             loop={projects.length === 1} // Ne boucle que s'il est tout seul. Sinon on passe au suivant.
             onEnded={() => {
@@ -723,7 +741,8 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
             <div className={`w-[100vw] h-full flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 pointer-events-none ${isDragging ? 'opacity-80 scale-90' : 'opacity-40 scale-75'}`} style={{ minWidth: '100vw', width: '100vw' }}>
               <video 
                 src={getNextProject()?.video_url}
-                className="max-h-full max-w-full object-contain shadow-2xl"
+                className="max-h-full max-w-full object-contain shadow-2xl transition-transform duration-500"
+                style={getPlayerRotationStyle(getNextProject()?.rotation)}
                 muted playsInline crossOrigin="anonymous" 
               />
             </div>

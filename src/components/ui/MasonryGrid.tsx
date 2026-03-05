@@ -155,10 +155,10 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
               const hash = project.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
               const type = hash % 5 
               
-              spanClass = 'col-span-1 row-span-1'
-              if (type === 0) spanClass = 'col-span-2 row-span-1' // Rectangle horizontal
-              else if (type === 1) spanClass = 'col-span-1 row-span-2' // Rectangle vertical
-              else if (type === 2) spanClass = 'col-span-2 row-span-2' // Gros carré impactant
+              spanClass = 'col-span-1 row-span-1 min-h-[200px] min-w-0'
+              if (type === 0) spanClass = 'col-span-2 row-span-1 min-h-[200px] min-w-0' // Rectangle horizontal (16:9 like)
+              else if (type === 1) spanClass = 'col-span-1 row-span-1 min-h-[200px] min-w-0' // Changed from extreme vertical
+              else if (type === 2) spanClass = 'col-span-2 row-span-2 min-h-[400px] min-w-0' // Square (impactful)
             }
 
             return (

@@ -48,7 +48,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     id: project.id,
     title: project.title,
     client: project.client,
-    video_url: project.main_video_url || ''
+    video_url: project.main_video_url || '',
+    rotation: project.rotation || 0
   }
 
   // Création du array hybride avec TOUTES les vidéos du projet pour la nav intra-lecteur
@@ -58,7 +59,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       id: `${project.id}-carousel-${index}`,
       title: project.title,
       client: project.client,
-      video_url: url
+      video_url: url,
+      rotation: project.rotation || 0
     }))
   ]
 

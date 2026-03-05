@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
+import Hls from 'hls.js'
 
 interface Project {
   id: string;
@@ -7,12 +8,39 @@ interface Project {
   slug?: string;
   client: string;
   main_video_url?: string;
+  rotation?: number;
 }
 
 export default function ProjectCard({ project, priorityLoad = false, globalIsMuted = true }: { project: Project, priorityLoad?: boolean, globalIsMuted?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLAnchorElement>(null)
   const [isHovered, setIsHovered] = useState(false)
+  const hlsRef = useRef<Hls | null>(null)
+
+  // Initialisation de la source vidéo (MP4 ou HLS)
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !project.main_video_url) return
+
+    if (project.main_video_url.includes('.m3u8') && Hls.isSupported()) {
+      const hls = new Hls({
+        capLevelToPlayerSize: false, // DANGEROUS on vertical videos: Forces incorrect aspect ratio cropping based on wrapper!
+        startLevel: 0 // Force la plus basse qualité au démarrage pour économiser la bande passante
+      })
+      hlsRef.current = hls
+      hls.loadSource(project.main_video_url)
+      hls.attachMedia(video)
+    } else {
+      video.src = project.main_video_url
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy()
+        hlsRef.current = null
+      }
+    }
+  }, [project.main_video_url])
 
   // Intersection Observer pour ne jouer la vidéo que si elle est visible à l'écran (opti de perf vitale)
   useEffect(() => {
@@ -82,15 +110,22 @@ export default function ProjectCard({ project, priorityLoad = false, globalIsMut
     >
       <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
         {project.main_video_url ? (
-          <video
-            ref={videoRef}
-            src={project.main_video_url}
-            loop
-            muted // Strictement muet à l'initialisation pour le navigateur
-            playsInline
-            preload={priorityLoad ? "auto" : "metadata"}
-            className="block w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-105"
-          />
+          <div className="absolute inset-0 overflow-hidden">
+            <video
+              ref={videoRef}
+              loop
+              muted // Strictement muet à l'initialisation pour le navigateur
+              playsInline
+              preload={priorityLoad ? "auto" : "metadata"}
+              style={{
+                 '--rot': project.rotation ? `${project.rotation}deg` : '0deg',
+                 '--base-scl': (project.rotation === 90 || project.rotation === -90) ? '1.35' : '1',
+                 '--hover-scl': (project.rotation === 90 || project.rotation === -90) ? '1.40' : '1.05',
+                 transform: `rotate(var(--rot)) scale(var(--base-scl))`,
+              } as React.CSSProperties}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.19,1,0.22,1)] hover:z-10 group-hover:[transform:rotate(var(--rot))_scale(var(--hover-scl))]"
+            />
+          </div>
         ) : (
            <div className="w-full h-full min-h-[250px] bg-zinc-900 flex items-center justify-center font-mono text-xs text-zinc-700 uppercase">
              Media Indisponible

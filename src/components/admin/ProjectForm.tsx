@@ -13,6 +13,7 @@ type ProjectData = {
   rank?: number
   priority?: string
   slug?: string
+  rotation?: number
 }
 
 type ProjectFormProps = {
@@ -47,6 +48,7 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
   const [client, setClient] = useState(project?.client || '')
   const [rank, setRank] = useState(project?.rank || 0)
   const [priority, setPriority] = useState(project?.priority || '')
+  const [rotation, setRotation] = useState(project?.rotation || 0)
   
   // States des vidéos
   const [mainVideoUrl, setMainVideoUrl] = useState<string>(project?.main_video_url || '')
@@ -115,6 +117,7 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
         description: project?.description || '',
         rank,
         priority: priority || null,
+        rotation,
         main_video_url: mainVideoUrl,
         video_url: mainVideoUrl, // Patcher la contrainte NOT NULL de l'ancienne DB
         carousel_urls: JSON.stringify(carouselUrls) // Stocker en string si la colonne est type Text
@@ -189,6 +192,20 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
                 <option value="TOP 2">TOP 2 (Très Haute)</option>
                 <option value="TOP 3">TOP 3 (Haute)</option>
                 <option value="RAW">RAW (Intermédiaire)</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-xs uppercase text-zinc-500 mb-1">Rotation Vidéo (en degrés)</label>
+              <select 
+                value={rotation}
+                onChange={e => setRotation(parseInt(e.target.value) || 0)}
+                className="w-full bg-black border border-zinc-700 p-2 focus:border-white outline-none text-zinc-300" 
+              >
+                <option value="0">0° (Normale)</option>
+                <option value="90">90° (Tourner à droite)</option>
+                <option value="180">180° (À l&apos;envers)</option>
+                <option value="-90">-90° (Tourner à gauche)</option>
               </select>
             </div>
           </div>

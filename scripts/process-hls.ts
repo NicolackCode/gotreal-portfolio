@@ -97,7 +97,7 @@ async function processVideo(gcpPath: string): Promise<string> {
   try {
     const [metadata] = await bucket.file(gcpPath).getMetadata();
     const sizeBytes = Number(metadata.size);
-    const MAX_SIZE_MB = 200; // Si plus de 200 Mo, on skip direct !
+    const MAX_SIZE_MB = 1000; // Increased to 1GB to process ANSWR and Le fou du bus
     if (sizeBytes > MAX_SIZE_MB * 1024 * 1024) {
       console.log(`⏩ Skipping processing: Video file is too huge (${(sizeBytes / 1024 / 1024).toFixed(1)} MB). Max is ${MAX_SIZE_MB} MB.`);
       throw new Error("VIDEO_TOO_LONG");
@@ -129,6 +129,7 @@ async function processVideo(gcpPath: string): Promise<string> {
   
   // 1) Obtenir la durée de la vidéo d'abord
   let durationInSeconds = 0;
+  let isVertical = false;
   try {
      const metadata = await new Promise<ffmpeg.FfprobeData>((resolve, reject) => {
         ffmpeg.ffprobe(localInputPath, (err, metadata) => {
@@ -139,12 +140,23 @@ async function processVideo(gcpPath: string): Promise<string> {
      if (metadata?.format?.duration) {
          durationInSeconds = metadata.format.duration;
      }
+     if (metadata?.streams) {
+         const videoStream = metadata.streams.find(s => s.codec_type === 'video');
+         if (videoStream && videoStream.width && videoStream.height) {
+             const rotated = videoStream.tags?.rotate == '90' || videoStream.tags?.rotate == '270' || videoStream.tags?.rotate == '-90';
+             if (rotated) {
+                 isVertical = videoStream.width > videoStream.height;
+             } else {
+                 isVertical = videoStream.height > videoStream.width;
+             }
+         }
+     }
   } catch {
       console.warn("⚠️ Could not read video metadata, progress will be approximate.");
   }
 
   // ----- NEW: Check if video is too long to process locally
-  const MAX_DURATION_MINUTES = 10; // On saute si la vidéo fait plus de 10 minutes
+  const MAX_DURATION_MINUTES = 60; // Increased to 60 mins 
   if (durationInSeconds > MAX_DURATION_MINUTES * 60) {
       console.log(`⏩ Skipping processing: Video is too long (${(durationInSeconds / 60).toFixed(1)} mins). Max is ${MAX_DURATION_MINUTES} mins.`);
       // On supprime juste le fichier qu'on a téléchargé pour tester la durée
@@ -158,16 +170,20 @@ async function processVideo(gcpPath: string): Promise<string> {
   await new Promise((resolve, reject) => {
     let lastLogTime = 0;
 
+    const scale1080 = isVertical ? '1080x1920' : '1920x1080';
+    const scale720 = isVertical ? '720x1280' : '1280x720';
+    const scale480 = isVertical ? '484x854' : '854x484'; // FFmpeg needs even numbers
+
     ffmpeg(localInputPath)
       .outputOptions([
         '-map 0:v:0', '-map 0:a:0?',
-        '-s:v:0 1920x1080', '-c:v:0 libx264', '-b:v:0 5000k', '-c:a:0 aac', '-b:a:0 128k',
+        `-s:v:0 ${scale1080}`, '-c:v:0 libx264', '-b:v:0 5000k', '-c:a:0 aac', '-b:a:0 128k',
         
         '-map 0:v:0', '-map 0:a:0?',
-        '-s:v:1 1280x720', '-c:v:1 libx264', '-b:v:1 2500k', '-c:a:1 aac', '-b:a:1 128k',
+        `-s:v:1 ${scale720}`, '-c:v:1 libx264', '-b:v:1 2500k', '-c:a:1 aac', '-b:a:1 128k',
         
         '-map 0:v:0', '-map 0:a:0?',
-        '-s:v:2 854x480', '-c:v:2 libx264', '-b:v:2 1000k', '-c:a:2 aac', '-b:a:2 96k',
+        `-s:v:2 ${scale480}`, '-c:v:2 libx264', '-b:v:2 1000k', '-c:a:2 aac', '-b:a:2 96k',
         
         '-f hls',
         '-hls_time 6',
