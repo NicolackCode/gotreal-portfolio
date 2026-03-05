@@ -12,6 +12,7 @@ type ProjectData = {
   carousel_urls?: string | string[]
   rank?: number
   priority?: string
+  slug?: string
 }
 
 type ProjectFormProps = {
@@ -90,13 +91,26 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
     setCarouselUrls(prev => prev.filter(url => url !== urlToRemove))
   }
 
+  // Helper function pour générer le slug
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD') // Sépare les accents
+      .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
+      .replace(/[^a-z0-9]+/g, '-') // Remplace par des tirets
+      .replace(/^-+|-+$/g, '') // Enlève tirets début/fin
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsUploading(true)
 
     try {
+      const expectedSlug = generateSlug(title)
+      
       const projectData = {
         title,
+        slug: expectedSlug,
         client,
         description: project?.description || '',
         rank,

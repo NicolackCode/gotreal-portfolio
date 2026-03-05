@@ -6,8 +6,8 @@ import AmbilightPlayer from '@/components/ui/AmbilightPlayer'
 
 export const revalidate = 0 
 
-export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -23,8 +23,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { data: project, error } = await supabase
     .from('projects')
     .select('*')
-    .eq('id', id)
+    .eq('slug', slug)
     .single()
+
+  console.log("SLUG FROM PARAMS:", slug)
+  console.log("SUPABASE ERROR:", error)
+  console.log("SUPABASE PROJECT FOUND:", !!project)
 
   if (error || !project) {
     return notFound()
@@ -90,25 +94,29 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             </div>
           )}
 
-          {/* CAROUSEL DES VIDEOS */}
+          {/* CAROUSEL DES VIDEOS MINIMALISTE */}
           {carouselItems && carouselItems.length > 0 && (
-            <div className="space-y-12">
-              <h3 className="text-[10px] font-mono uppercase tracking-[0.3em] text-zinc-600 border-b border-zinc-900 pb-4">
-                Extraits Additionnels & Déclinaisons
+            <div className="space-y-8 mt-12 border-t border-zinc-900 pt-16">
+              <h3 className="text-[10px] font-mono uppercase tracking-[0.5em] text-zinc-500 text-center">
+                Média Additionnels
               </h3>
               
-              {/* Conteneur défilant horizontalement */}
-              <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 md:gap-8 pb-8 -mx-6 px-6 lg:-mx-12 lg:px-12 items-center">
+              {/* Conteneur défilant horizontalement style galerie */}
+              <div className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar gap-2 md:gap-4 pb-8 items-center px-6 lg:px-0">
                 {carouselItems.map((url, i) => (
                   <div 
                     key={i} 
-                    className="flex-none h-[50vh] md:h-[60vh] xl:h-[70vh] max-w-[90vw] bg-transparent border border-zinc-900 relative group overflow-hidden snap-center"
+                    className="flex-none h-40 md:h-56 xl:h-72 w-auto aspect-video bg-zinc-950 relative group overflow-hidden snap-center"
                   >
                      <video 
                        src={url}
-                       controls
+                       autoPlay
+                       muted
+                       loop
+                       playsInline
                        preload="metadata"
-                       className="w-auto h-full object-contain group-hover:scale-[1.02] transition-transform duration-700"
+                       crossOrigin="anonymous"
+                       className="w-full h-full object-cover opacity-50 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700 pointer-events-none"
                      />
                   </div>
                 ))}

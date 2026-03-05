@@ -4,6 +4,7 @@ import Link from 'next/link'
 interface Project {
   id: string;
   title: string;
+  slug?: string;
   client: string;
   main_video_url?: string;
 }
@@ -73,7 +74,7 @@ export default function ProjectCard({ project, priorityLoad = false, globalIsMut
   // Astuce Bento: transféré au parent (MasonryGrid)
   return (
     <Link 
-      href={`/project/${project.id}`}
+      href={project.slug ? `/project/${project.slug}` : `/project/${encodeURIComponent(project.title)}`}
       ref={containerRef}
       className={`group relative block w-full h-full overflow-hidden bg-black border border-zinc-900 cursor-pointer`}
       onMouseEnter={handleMouseEnter}

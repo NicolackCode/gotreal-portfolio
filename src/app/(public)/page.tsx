@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
+import HeroVideoBackground from '@/components/ui/HeroVideoBackground'
 
 export const revalidate = 0 
 
@@ -16,28 +17,23 @@ export default async function HomePage() {
     }
   )
 
-  // On récupère juste le meilleur projet ou un projet aléatoire pour servir de Background vidéo (V1)
-  // Ou on fixe une URL par défaut (le fameux showreel). Ici, on prend le premier qui a un main_video_url.
+  // On récupère les URLs des projets visibles
   const { data: projectsData } = await supabase
     .from('projects')
     .select('main_video_url')
+    .eq('is_visible', true)
     .not('main_video_url', 'is', null)
-    .limit(1)
 
-  const bgVideo = projectsData?.[0]?.main_video_url || 'https://storage.googleapis.com/gotreal-assets/demo.mp4' // Fallback si vide
+  const fallbackList = ['https://storage.googleapis.com/gotreal-assets/demo.mp4']
+  const bgVideosList = projectsData && projectsData.length > 0 
+    ? projectsData.map(p => p.main_video_url) 
+    : fallbackList
 
   return (
     <main className="relative w-full h-screen overflow-hidden bg-black flex items-center justify-center">
       {/* BACKGROUND VIDEO */}
       <div className="absolute inset-0 w-full h-full z-0 opacity-60">
-        <video 
-          src={bgVideo} 
-          autoPlay 
-          loop 
-          muted 
-          playsInline 
-          className="w-full h-full object-cover"
-        />
+        <HeroVideoBackground videoUrls={bgVideosList} />
         {/* Overlay pour assombrir ou ajouter du grain (vibe cinematic) */}
         <div className="absolute inset-0 bg-black/40"></div>
       </div>

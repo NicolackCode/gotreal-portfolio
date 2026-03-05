@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Hls from 'hls.js'
 
 type Project = {
   id: string
@@ -14,6 +15,13 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
   const mode: number = 2; // Force mode Hardcore nativement pour toutes les vidéos
   const [isMuted, setIsMuted] = useState(true)
   const [isPlaying, setIsPlaying] = useState(true)
+
+  // ---- HLS.JS REFS & STATE ----
+  const hlsRef = useRef<Hls | null>(null)
+  const [qualities, setQualities] = useState<{height: number, width: number}[]>([])
+  const [currentQuality, setCurrentQuality] = useState<number>(-1) // -1 is auto
+  const [showQualityMenu, setShowQualityMenu] = useState(false)
+  const [nativeHeight, setNativeHeight] = useState<number | null>(null)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const displayCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -216,6 +224,73 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isBuffering, setIsBuffering] = useState(false)
+
+  // ---- HOVER TOOLTIP & LOCAL STORAGE ----
+  const [hoverTime, setHoverTime] = useState<number | null>(null)
+  const [hoverPos, setHoverPos] = useState<number>(0)
+  const progressBarRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const savedVol = localStorage.getItem('gotreal_vol')
+    if (savedVol !== null) {
+      const v = parseFloat(savedVol)
+      setVolume(v)
+      setIsMuted(v === 0)
+    }
+  }, [])
+
+  // ---- SWIPE & DRAG LOGIC ----
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState(0)
+  const dragStartX = useRef(0)
+  const hasSwiped = useRef(false)
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    setIsDragging(true)
+    dragStartX.current = e.clientX
+    hasSwiped.current = false
+    setDragOffset(0)
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* ignore */ }
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    const diffX = e.clientX - dragStartX.current
+    if (Math.abs(diffX) > 10) {
+      hasSwiped.current = true
+    }
+    if (projects.length > 1) {
+      setDragOffset(diffX)
+    }
+  }
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    setIsDragging(false)
+    
+    // Threshold = 50px pour confirmer le swipe (plus réactif)
+    if (hasSwiped.current && projects.length > 1) {
+      const diffX = dragStartX.current - e.clientX
+      if (diffX > 50) {
+        handleNext(e)
+      } else if (diffX < -50) {
+        handlePrev(e)
+      }
+    }
+    setDragOffset(0) // On remet à 0, la transition CSS s'occupera du retour smooth au centre
+    try { e.currentTarget.releasePointerCapture(e.pointerId) } catch { /* ignore */ }
+  }
+
+  const guardedTogglePlay = (e: React.MouseEvent) => {
+    if (hasSwiped.current) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+    }
+    togglePlay()
+  }
 
   // ---- IDLE TIMER ----
   const [isIdle, setIsIdle] = useState(false)
@@ -262,7 +337,50 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
     if (!video) return
 
     const handleTimeUpdate = () => setCurrentTime(video.currentTime)
-    const handleLoadedMetadata = () => setDuration(video.duration)
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration)
+      if (video.videoHeight) {
+        setNativeHeight(video.videoHeight)
+      }
+    }
+    
+    const handleWaiting = () => setIsBuffering(true)
+    const handlePlaying = () => setIsBuffering(false)
+
+    // Init HLS & Source
+    if (Hls.isSupported() && currentProject?.video_url && currentProject.video_url.includes('.m3u8')) {
+      if (hlsRef.current) {
+        hlsRef.current.destroy()
+      }
+      const hls = new Hls({
+        autoStartLoad: true,
+        startLevel: -1
+      })
+      hlsRef.current = hls
+      hls.loadSource(currentProject.video_url)
+      hls.attachMedia(video)
+
+      hls.on(Hls.Events.MANIFEST_PARSED, function (_event, data) {
+         setQualities(data.levels)
+         const savedQ = localStorage.getItem('gotreal_quality')
+         const qIndex = savedQ ? parseInt(savedQ, 10) : -1
+         
+         if (qIndex >= -1 && qIndex < data.levels.length) {
+            hls.currentLevel = qIndex
+            setCurrentQuality(qIndex)
+         } else {
+            setCurrentQuality(-1) 
+         }
+      })
+      
+      hls.on(Hls.Events.LEVEL_SWITCHED, function () {
+          // If we want to show anything when level successfully switched
+      })
+    } else {
+      // Fallback for native HLS (Safari) or non-HLS videos (.mp4)
+      video.src = currentProject?.video_url || ""
+      setQualities([])
+    }
     
     // Si la vidéo est déjà chargée dans le cache, forcer l'init pour éviter le bug de la progress bar
     if (video.readyState >= 1) {
@@ -272,12 +390,22 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
 
     video.addEventListener('timeupdate', handleTimeUpdate)
     video.addEventListener('loadedmetadata', handleLoadedMetadata)
+    video.addEventListener('waiting', handleWaiting)
+    video.addEventListener('playing', handlePlaying)
+    video.addEventListener('canplay', handlePlaying)
     
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate)
       video.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      video.removeEventListener('waiting', handleWaiting)
+      video.removeEventListener('playing', handlePlaying)
+      video.removeEventListener('canplay', handlePlaying)
+      if (hlsRef.current) {
+        hlsRef.current.destroy()
+        hlsRef.current = null
+      }
     }
-  }, [currentIndex]) // Se ré-attache si la vidéo change
+  }, [currentIndex, currentProject?.video_url]) // Se ré-attache si la vidéo change
 
   const gainNodeRef = useRef<GainNode | null>(null)
 
@@ -372,10 +500,12 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
       if (gainNodeRef.current) {
          if (nextMuted) {
             gainNodeRef.current.gain.value = 0;
+            localStorage.setItem('gotreal_vol', '0');
          } else {
             const nextVol = volume === 0 ? 1 : volume;
             setVolume(nextVol);
             gainNodeRef.current.gain.value = nextVol;
+            localStorage.setItem('gotreal_vol', nextVol.toString());
          }
       }
     }
@@ -422,14 +552,67 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
     return `${m}:${s}`
   }
 
-  const handleNext = (e: React.MouseEvent) => {
+  const handleProgressMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current || !duration) return
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
+    setHoverPos(x)
+    setHoverTime((x / rect.width) * duration)
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignorer si l'utilisateur tape dans un formulaire
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+      
+      switch (e.key.toLowerCase()) {
+        case ' ':
+          e.preventDefault();
+          if (videoRef.current) {
+             if (videoRef.current.paused) videoRef.current.play()
+             else videoRef.current.pause()
+             setIsPlaying(!videoRef.current.paused)
+          }
+          break;
+        case 'f':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'm':
+          e.preventDefault();
+          toggleMute();
+          break;
+        case 'arrowright':
+          e.preventDefault();
+          if (videoRef.current) {
+            videoRef.current.currentTime = Math.min(videoRef.current.duration, videoRef.current.currentTime + 5);
+          }
+          break;
+        case 'arrowleft':
+          e.preventDefault();
+          if (videoRef.current) {
+            videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
+          }
+          break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying]);
+
+  const handleNext = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation()
     setCurrentIndex((prev) => (prev + 1) % projects.length)
   }
-  const handlePrev = (e: React.MouseEvent) => {
+  const handlePrev = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation()
     setCurrentIndex((prev) => (prev - 1 + projects.length) % projects.length)
   }
+  
+  // Fonction pour récupérer le projet précédent/suivant pour le pré-rendu du carrousel
+  const getPrevProject = () => projects[(currentIndex - 1 + projects.length) % projects.length]
+  const getNextProject = () => projects[(currentIndex + 1) % projects.length]
 
   const progressPercent = duration ? (currentTime / duration) * 100 : 0
 
@@ -480,22 +663,72 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
         </>
       )}
 
-      {/* Main Video (100% Opacité) */}
+      {/* Conteneur principal Carrousel Swipe */}
       <div 
-        className={`relative z-10 w-full h-full flex flex-col justify-center items-center cursor-pointer select-none transition-all duration-700 ${isFullscreen ? 'p-0' : 'pt-32 pb-32 px-12 md:px-24 md:pt-40 md:pb-36'}`}
-        onClick={togglePlay}
+        className={`absolute inset-0 z-10 flex items-center cursor-pointer select-none ${isDragging ? 'transition-none' : 'transition-transform duration-500 ease-out'} ${isFullscreen ? 'p-0' : 'pt-32 pb-32 md:pt-40 md:pb-36'}`}
+        onClick={guardedTogglePlay}
         onDoubleClick={toggleFullscreen}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        // translate-x de -100vw centre la 2ème div (la vidéo actuelle).
+        style={{ 
+          transform: projects.length > 1 ? `translate3d(calc(-100vw + ${dragOffset}px), 0, 0)` : 'none', 
+          touchAction: 'none',
+          width: projects.length > 1 ? '300vw' : '100vw',
+          // Pour s'assurer que les 3 éléments font exactement 100vw chacun
+          display: 'flex',
+          flexWrap: 'nowrap'
+        }}
       >
-        <video 
-          ref={videoRef}
-          src={currentProject?.video_url}
-          className="max-h-full max-w-full object-contain shadow-2xl transition-all duration-700 ease-in-out"
-          autoPlay
-          loop
-          muted={true} // Obligé pour l'autoplay, mais déverrouillé silencieusement par le WebAudio
-          playsInline
-          crossOrigin="anonymous" 
-        />
+        
+        {projects.length > 1 && (
+            <div className={`w-[100vw] h-full flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 pointer-events-none ${isDragging ? 'opacity-80 scale-90' : 'opacity-40 scale-75'}`} style={{ minWidth: '100vw', width: '100vw' }}>
+              <video 
+                src={getPrevProject()?.video_url}
+                className="max-h-full max-w-full object-contain shadow-2xl"
+                muted playsInline crossOrigin="anonymous" 
+              />
+            </div>
+        )}
+
+        <div className={`w-[100vw] h-full relative flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 ${isDragging ? 'scale-95' : 'scale-100'}`} style={{ minWidth: '100vw', width: '100vw' }}>
+          
+          {isBuffering && (
+             <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                <div className="w-12 h-12 border-2 border-zinc-800 border-t-zinc-400 rounded-full animate-spin opacity-50" />
+             </div>
+          )}
+
+          <video 
+            ref={videoRef}
+            draggable={false}
+            className="w-full h-full object-contain shadow-2xl transition-all duration-500 ease-in-out"
+            autoPlay
+            loop={projects.length === 1} // Ne boucle que s'il est tout seul. Sinon on passe au suivant.
+            onEnded={() => {
+               if (projects.length > 1) {
+                  // handleNext sans event
+                  setCurrentIndex((prev) => (prev + 1) % projects.length)
+               }
+            }}
+            muted={true} // Obligé pour l'autoplay, mais déverrouillé silencieusement par le WebAudio
+            playsInline
+            crossOrigin="anonymous" 
+          />
+        </div>
+        
+        {projects.length > 1 && (
+            <div className={`w-[100vw] h-full flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 pointer-events-none ${isDragging ? 'opacity-80 scale-90' : 'opacity-40 scale-75'}`} style={{ minWidth: '100vw', width: '100vw' }}>
+              <video 
+                src={getNextProject()?.video_url}
+                className="max-h-full max-w-full object-contain shadow-2xl"
+                muted playsInline crossOrigin="anonymous" 
+              />
+            </div>
+        )}
+
       </div>
 
       {/* Titre Absolu Premium centré au dessus (Optionnel, ou caché pour l'épure V1) */}
@@ -517,7 +750,22 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
         <div className="flex flex-col gap-4">
           
           {/* Progress Bar interactive draggable */}
-          <div className="w-full relative flex items-center h-2 group/progress">
+          <div 
+            className="w-full relative flex items-center h-2 group/progress cursor-pointer"
+            ref={progressBarRef}
+            onMouseMove={handleProgressMouseMove}
+            onMouseLeave={() => setHoverTime(null)}
+          >
+            {/* Tooltip Hover Time */}
+            {hoverTime !== null && (
+               <div 
+                 className="absolute bottom-4 text-[10px] font-mono bg-zinc-900/90 border border-zinc-700/50 px-1.5 py-0.5 rounded text-zinc-300 pointer-events-none transform -translate-x-1/2 whitespace-nowrap z-50 transition-opacity" 
+                 style={{ left: hoverPos }}
+               >
+                 {formatTime(hoverTime)}
+               </div>
+            )}
+
             <input 
               type="range"
               min="0"
@@ -603,6 +851,86 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
                         background: `linear-gradient(to right, #fff ${(isMuted ? 0 : volume) * 100}%, #3f3f46 ${(isMuted ? 0 : volume) * 100}%)`,
                       }}
                     />
+                  </div>
+                </div>
+                
+                {/* Quality Menu Selector */}
+                <div className="relative group/quality flex items-center">
+                  <button 
+                    onClick={() => setShowQualityMenu(!showQualityMenu)}
+                    className="hover:text-white transition-colors text-zinc-400 group-hover:text-white p-1 relative"
+                    title="Qualité Vidéo"
+                  >
+                    {/* Gear Icon */}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" className="transition-transform duration-500 ease-out group-hover/quality:rotate-90">
+                       <circle cx="12" cy="12" r="3"></circle>
+                       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    
+                    {/* Resolution Badge On Gear */}
+                    {qualities.length > 0 && currentQuality !== -1 && (
+                       <span className="absolute -top-2 -right-3 text-[9px] bg-cyan-500/80 text-white px-1 rounded-sm font-sans leading-tight backdrop-blur-sm pointer-events-none">
+                          {(() => {
+                            const h = qualities[currentQuality]?.height;
+                            if (!h) return '';
+                            if (h >= 2160) return "4K";
+                            if (h >= 1440) return "1440p";
+                            return `${h}p`;
+                          })()}
+                       </span>
+                    )}
+                  </button>
+
+                  <div 
+                    className={`absolute bottom-full right-0 mb-4 bg-zinc-950/95 backdrop-blur-xl border border-zinc-800/50 rounded-lg p-2 flex flex-col gap-1 z-50 shadow-2xl min-w-[140px] transform origin-bottom-right transition-all duration-300 ease-[cubic-bezier(0.19,1,0.22,1)] ${showQualityMenu ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none'}`}
+                  >
+                    <div className="text-[9px] text-zinc-500 font-bold uppercase px-3 py-1 mb-1 border-b border-zinc-900 font-sans tracking-[0.2em]">Résolution</div>
+                    
+                    <button
+                      onClick={() => {
+                        if (hlsRef.current && qualities.length > 0) {
+                          hlsRef.current.currentLevel = -1
+                          setCurrentQuality(-1)
+                          localStorage.setItem('gotreal_quality', '-1')
+                        }
+                        setShowQualityMenu(false)
+                      }}
+                       className={`text-xs text-left px-3 py-2.5 transition-all rounded-md flex items-center justify-between group/btn ${currentQuality === -1 && qualities.length > 0 ? 'bg-zinc-800/50 text-white font-bold' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
+                    >
+                      <span className="font-mono tracking-wider">AUTO</span>
+                      {currentQuality === -1 && qualities.length > 0 && <span className="text-cyan-400">✓</span>}
+                    </button>
+
+                    {qualities.length > 0 ? (
+                      // slice().reverse() to show highest resolution at the top (e.g. 1080p -> 720p -> 480p)
+                      // Keep original index for currentLevel setter
+                      qualities.map((level, i) => ({ level, originalIndex: i })).reverse().map(({ level, originalIndex }) => {
+                        const h = level.height;
+                        const label = h >= 2160 ? "4K" : h >= 1440 ? "1440p" : `${h}p`;
+                        return (
+                           <button
+                             key={originalIndex}
+                             onClick={() => {
+                                if (hlsRef.current) {
+                                  hlsRef.current.currentLevel = originalIndex
+                                  setCurrentQuality(originalIndex)
+                                  setShowQualityMenu(false)
+                                  localStorage.setItem('gotreal_quality', originalIndex.toString())
+                                }
+                             }}
+                            className={`text-xs text-left px-3 py-2.5 transition-all rounded-md flex items-center justify-between group/btn ${currentQuality === originalIndex ? 'bg-zinc-800/50 text-white font-bold' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
+                           >
+                             <span className="font-mono tracking-wider">{label}</span>
+                             {currentQuality === originalIndex && <span className="text-cyan-400">✓</span>}
+                           </button>
+                        )
+                      })
+                    ) : (
+                      <div className="text-xs text-left px-3 py-2.5 text-zinc-400 font-mono tracking-wider flex items-center justify-between cursor-default">
+                        <span>{nativeHeight ? (nativeHeight >= 2160 ? "4K Original" : nativeHeight >= 1440 ? "1440p Original" : `${nativeHeight}p Original`) : "Source Native"}</span>
+                        <span className="text-zinc-600">✓</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
