@@ -1,0 +1,2 @@
+﻿scripts/run-sql-migration.ts(2,24): error TS7016: Could not find a declaration file for module 'pg'. 'C:/Users/nicol/Desktop/Site portfolio gauteh/node_modules/pg/esm/index.mjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/pg` if it exists or add a new declaration (.d.ts) file containing `declare module 'pg';`

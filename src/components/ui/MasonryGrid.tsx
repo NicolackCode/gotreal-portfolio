@@ -99,7 +99,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
   // car nous n'avons pas encore pu passer de script de migration SQL sur le Supabase live de production.
   const categories = useMemo(() => {
     if (!projects) return []
-    const catList = projects.map(p => p.client?.trim().toUpperCase()).filter((c): c is string => Boolean(c))
+    const catList = projects.map(p => (p.category || p.client)?.trim().toUpperCase()).filter((c): c is string => Boolean(c))
     const uniqueCat = Array.from(new Set(catList))
     return uniqueCat.sort()
   }, [projects])
@@ -109,8 +109,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
     let result = [...projects]
     
     if (activeFilter !== 'TOUT') {
-      // BUGFIX BDD : Filtrage temporaire sur la colonne 'client'
-      result = result.filter(p => p.client?.trim().toUpperCase() === activeFilter)
+      result = result.filter(p => (p.category || p.client)?.trim().toUpperCase() === activeFilter)
     }
 
     return result.sort((a, b) => {
@@ -148,11 +147,11 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
   }
 
   return (
-    <div className="w-full mx-auto px-4 py-12 md:px-8">
+    <div className="w-full py-12">
       
       {/* MENU FILTRES CATEGORIES EYECANNDY STYLE */}
       {categories.length > 0 && (
-        <div className="flex flex-col items-start justify-start mb-8 sm:mb-12">
+        <div className="flex flex-col items-center justify-center mb-8 sm:mb-12">
           <button
             onClick={() => setActiveFilter('TOUT')}
             className={`text-sm md:text-base font-sans font-black tracking-widest uppercase px-4 py-2 mb-8 transition-colors ${
@@ -164,7 +163,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
             ALL
           </button>
 
-          <div className="flex flex-wrap items-start justify-start gap-4 sm:gap-6 w-full">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 w-full px-4">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -188,39 +187,32 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
           Aucun projet pour cette catégorie
         </div>
       ) : (
-        // Vraie Grid CSS (Bento Box), le grid-flow-dense fait remonter les petits blocs dans les trous
-        <div className="w-full grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 auto-rows-[120px] md:auto-rows-[180px] xl:auto-rows-[250px] gap-[2px] grid-flow-dense pb-24">
+        // Vraie Grid CSS (Bento Box), le grid-flow-dense fait remonter les blocs dans les trous
+        <div className="w-full grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 auto-rows-[160px] md:auto-rows-[220px] xl:auto-rows-[280px] gap-[4px] grid-flow-dense pb-24">
             {filteredProjects.map((project, index) => {
               
               const isRotatedVertical = project.rotation === 90 || project.rotation === -90 || project.rotation === 270;
-              // Fallback BDD si la vidéo n'a pas encore répondu (évite un flash énorme)
               const fallbackIsNativeVert = project.client?.toLowerCase().includes('reel') || project.client?.toLowerCase().includes('tiktok') || project.category?.toLowerCase().includes('reel') || project.category?.toLowerCase().includes('tiktok');
               const fallbackIsVertical = isRotatedVertical || fallbackIsNativeVert;
 
-              // Force de vérité : la mesure physique de la vidéo surpasse la BDD
               const physicalFormat = verifiedFormats[project.id];
               const isVertical = physicalFormat ? physicalFormat === 'vertical' : fallbackIsVertical;
 
-              // Attribution chirurgicale des tailles (Spans)
-              // Jouer avec `col-span` (largeur) et `row-span` (hauteur)
+              // Formats "ZÉRO TROU NOIRS" : Les ratios de la grille correspondent aux ratios min max demandés.
               const getGridSpan = (isVert: boolean, i: number) => {
                  if (isVert) {
-                    // Les VERTICALES
-                    // Piliers majeurs (1 sur 3 est immense)
-                    if (i % 3 === 0) return "col-span-1 row-span-2 md:col-span-2 md:row-span-3 xl:col-span-2 xl:row-span-2"; 
-                    // Bandes verticales standards
-                    return "col-span-1 row-span-2 md:col-span-1 md:row-span-2 xl:col-span-1 xl:row-span-2";
+                    // VERTICAL (Portrait): Max = 2x3, Min = 1x2 (Tiktok ratio natif / Mobile ratio natif)
+                    if (i % 4 === 0) return "col-span-2 row-span-3";
+                    
+                    // Vertical standard : 1 col par 2 row
+                    return "col-span-1 row-span-2";
                  }
                  
-                 // Les HORIZONTALES (Cinéma, Classiques)
-                 // Création de blocs beaucoup plus larges et croisés
-                 if (i % 7 === 0) return "col-span-2 row-span-2 md:col-span-4 md:row-span-3 xl:col-span-4 xl:row-span-3"; // HERO BLOC GÉANT
-                 if (i % 5 === 0) return "col-span-2 row-span-1 md:col-span-2 md:row-span-1 xl:col-span-3 xl:row-span-2"; // Grand bloc large
-                 if (i % 4 === 0) return "col-span-2 row-span-2 md:col-span-2 md:row-span-2 xl:col-span-2 xl:row-span-2"; // Bloc carré
-                 if (i % 3 === 0) return "col-span-2 row-span-1 md:col-span-3 md:row-span-2 xl:col-span-3 xl:row-span-1"; // Grosse bande panoramique
+                 // HORIZONTAL (Paysage): Max = 3x2, Min = 2x1 (Ciné)
+                 if (i % 6 === 0) return "col-span-3 row-span-2"; 
                  
-                 // Bloc horizontal standard
-                 return "col-span-2 row-span-1 md:col-span-2 md:row-span-1 xl:col-span-2 xl:row-span-1";
+                 // Horizontal Standard (Cinéma 2x1):
+                 return "col-span-2 row-span-1"; 
               }
 
               const spanClasses = getGridSpan(isVertical, index);
@@ -232,13 +224,14 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
                   initial={{ opacity: 0, scale: 0.9, y: 30 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: "easeOut", delay: (index % 10) * 0.05 }}
-                  className={`relative w-full h-full ${spanClasses}`}
+                  className={`relative w-full h-full ${spanClasses} ring-1 ring-white/20`}
                 >
                   <ProjectCard 
                     project={project} 
                     priorityLoad={index < 8} 
                     globalIsMuted={globalIsMuted} 
                     onFormatLoaded={handleFormatLoaded}
+                    spanData={spanClasses} // Injecte le texte des grid-spans
                   />
                 </motion.div>
               )

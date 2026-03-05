@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import Hls from "hls.js";
+import React, { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -21,16 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase";
 
-interface Project {
-  id: string;
-  title: string;
-  client: string;
-  rank: number;
-  forced_span?: string;
-  main_video_url?: string;
-  priority?: string;
-  is_visible?: boolean;
-}
+import { Project } from "./page";
 
 // Fonction utilitaire de Score traduite pour le DB field
 const getPriority = (priorityTag?: string) => {
@@ -78,22 +68,21 @@ function SortableItem({
     zIndex: isDragging ? 50 : 1,
   };
 
-  // Thumbnail Engine
-  const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    let hls: Hls | null = null;
-    if (project.main_video_url && videoRef.current) {
-       const url = project.main_video_url;
-       if (url.includes('.m3u8') && Hls.isSupported()) {
-          hls = new Hls({ autoStartLoad: true, startPosition: 0.1 });
-          hls.loadSource(url);
-          hls.attachMedia(videoRef.current);
-       } else {
-          videoRef.current.src = `${url}#t=0.1`;
-       }
-    }
-    return () => { if (hls) hls.destroy() }
-  }, [project.main_video_url]);
+  // Thumbnail Engine Ultraléger (Zero Video)
+  const getThumbnail = () => {
+    if (!project.carousel_urls || !Array.isArray(project.carousel_urls) || project.carousel_urls.length === 0) return null;
+    const imgUrl = project.carousel_urls.find(u => 
+       u && (
+         u.toLowerCase().endsWith('.jpg') || 
+         u.toLowerCase().endsWith('.jpeg') || 
+         u.toLowerCase().endsWith('.png') || 
+         u.toLowerCase().endsWith('.webp')
+       )
+    );
+    return imgUrl || null;
+  }
+  
+  const thumbnail = project.thumbnail_url || getThumbnail();
 
   return (
     <div
@@ -111,18 +100,15 @@ function SortableItem({
           ⋮⋮
         </div>
 
-        {/* THUMBNAIL VISUEL */}
+        {/* THUMBNAIL VISUEL SUPER FLUIDE */}
         <div className="relative w-24 h-14 bg-zinc-900 rounded-md overflow-hidden flex-shrink-0 shadow-inner group-hover:shadow-[0_0_10px_rgba(0,0,0,0.5)] transition-shadow">
-           {project.main_video_url ? (
-             <video 
-               ref={videoRef} 
-               className="w-full h-full object-cover" 
-               preload="metadata"
-               muted 
-               playsInline 
-             />
+           {thumbnail ? (
+             // eslint-disable-next-line @next/next/no-img-element
+             <img src={thumbnail} alt={project.title} className="w-full h-full object-cover" />
            ) : (
-             <div className="w-full h-full flex items-center justify-center text-[9px] text-zinc-700 uppercase">No Media</div>
+             <div className="w-full h-full flex flex-col items-center justify-center text-[7px] text-zinc-600 uppercase tracking-widest bg-zinc-950 font-mono">
+                Pas d&apos;image
+             </div>
            )}
            {project.is_visible === false && (
              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[1px]">

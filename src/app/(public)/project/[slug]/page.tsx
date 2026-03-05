@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import AmbilightPlayer from '@/components/ui/AmbilightPlayer'
+import CarouselVideo from '@/components/ui/CarouselVideo'
 
 export const revalidate = 0 
 
@@ -87,15 +88,35 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <section className="relative z-20 bg-black pt-24 pb-32">
         <div className="w-full max-w-[1800px] mx-auto px-6 lg:px-12">
           
-          {/* DESCRIPTION */}
-          {project.description && (
-            <div className="w-full lg:w-2/3 xl:w-1/2 mb-32">
-               <h3 className="text-[10px] font-mono uppercase tracking-[0.3em] text-zinc-600 mb-6">À PROPOS DU PROJET</h3>
-               <div className="text-zinc-300 font-sans text-lg md:text-2xl leading-relaxed md:leading-normal font-light">
-                 {project.description}
-               </div>
-            </div>
-          )}
+          {/* INFOS GLOBALES DU PROJET (Client, Catégorie, Description) */}
+          <div className="flex flex-col md:flex-row gap-12 md:gap-24 mb-32">
+             {/* Colonne Gauche : Métadonnées */}
+             <div className="flex flex-col gap-8 w-full md:w-1/3 lg:w-1/4">
+                {project.client && (
+                   <div>
+                      <h3 className="text-[10px] font-mono uppercase tracking-[0.3em] text-zinc-600 mb-3">Client</h3>
+                      <p className="text-white font-sans text-xl uppercase font-black uppercase tracking-wider">{project.client}</p>
+                   </div>
+                )}
+                
+                {project.category && (
+                   <div>
+                      <h3 className="text-[10px] font-mono uppercase tracking-[0.3em] text-zinc-600 mb-3">Catégorie</h3>
+                      <p className="text-white font-sans text-xl uppercase font-black uppercase tracking-wider">{project.category}</p>
+                   </div>
+                )}
+             </div>
+
+             {/* Colonne Droite : Description Complète */}
+             {project.description && (
+                <div className="w-full md:w-2/3 xl:w-1/2">
+                   <h3 className="text-[10px] font-mono uppercase tracking-[0.3em] text-zinc-600 mb-6">À PROPOS DU PROJET</h3>
+                   <div className="text-zinc-300 font-sans text-lg md:text-2xl leading-relaxed md:leading-normal font-light whitespace-pre-line">
+                     {project.description}
+                   </div>
+                </div>
+             )}
+          </div>
 
           {/* CAROUSEL DES VIDEOS MINIMALISTE */}
           {carouselItems && carouselItems.length > 0 && (
@@ -111,16 +132,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                     key={i} 
                     className="flex-none h-40 md:h-56 xl:h-72 w-auto aspect-video bg-zinc-950 relative group overflow-hidden snap-center"
                   >
-                     <video 
-                       src={url}
-                       autoPlay
-                       muted
-                       loop
-                       playsInline
-                       preload="metadata"
-                       crossOrigin="anonymous"
-                       className="w-full h-full object-cover opacity-50 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700 pointer-events-none"
-                     />
+                     <CarouselVideo url={url} />
                   </div>
                 ))}
               </div>

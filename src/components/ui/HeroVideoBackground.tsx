@@ -8,6 +8,9 @@ export default function HeroVideoBackground({ videoUrls }: { videoUrls: string[]
   const [currentUrl, setCurrentUrl] = useState<string>('')
   const [isMuted, setIsMuted] = useState(true)
   const [volume, setVolume] = useState(1)
+  
+  // Historique des dernières vidéos pour éviter la répétition rapide
+  const recentUrlsRef = useRef<string[]>([])
 
   useEffect(() => {
     // Restaurer l'état global du son si déjà défini
@@ -22,8 +25,8 @@ export default function HeroVideoBackground({ videoUrls }: { videoUrls: string[]
     }
 
     if (videoUrls && videoUrls.length > 0) {
-       const randomIndex = Math.floor(Math.random() * videoUrls.length)
-       setCurrentUrl(videoUrls[randomIndex])
+       // Laisser le paramètre [0] en priorité absolue pour le prank ou l'ordre choisi au backend
+       setCurrentUrl(videoUrls[0])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -48,10 +51,28 @@ export default function HeroVideoBackground({ videoUrls }: { videoUrls: string[]
       // 1. Zapping de la vidéo !
       if (videoUrls.length > 1) {
          setCurrentUrl(prev => {
-             // Anti-doublon : on cherche une vidéo différente de l'actuelle
-             const others = videoUrls.filter(url => url !== prev);
+             // 1. On retire l'historique des 5 (ou moins) dernières vidéos lues.
+             let others = videoUrls.filter(url => url !== prev && !recentUrlsRef.current.includes(url));
+             
+             // 2. Si l'historique est trop strict et masque toutes les vidéos (ex: y'a que 4 vidéos dispos sur la BDD totale)
+             // alors on fallback sur un mode d'anti-doublon simple qui cherche juste à zapper la boucle actuelle.
+             if (others.length === 0) {
+                 others = videoUrls.filter(url => url !== prev);
+             }
+
+             if (others.length === 0) return prev; // Anti-freeze final
+             
              const randomIndex = Math.floor(Math.random() * others.length);
-             return others[randomIndex];
+             const nextVid = others[randomIndex];
+
+             // On sauvegarde le passif
+             recentUrlsRef.current.push(nextVid);
+             if (recentUrlsRef.current.length > 5) {
+                // On retire les plus vieilles (first in, first out)
+                recentUrlsRef.current.shift();
+             }
+
+             return nextVid;
          });
       }
 
@@ -76,7 +97,7 @@ export default function HeroVideoBackground({ videoUrls }: { videoUrls: string[]
     let hls: Hls | null = null
 
     if (Hls.isSupported() && currentUrl.includes('.m3u8')) {
-      hls = new Hls({ autoStartLoad: true, capLevelToPlayerSize: false })
+      hls = new Hls({ autoStartLoad: true, capLevelToPlayerSize: false, startPosition: 2 })
       hls.loadSource(currentUrl)
       hls.attachMedia(video)
       
@@ -85,8 +106,22 @@ export default function HeroVideoBackground({ videoUrls }: { videoUrls: string[]
       })
     } else {
       // Fallback for native Safari or generic MP4s
+      // Bypass de l'Autoplay Policy
+      video.playsInline = true
+      
       video.src = currentUrl
-      video.play().catch(e => console.warn("Auto-play prevented", e))
+      video.load()
+
+      // Mécanisme de Retry en cas de blocage strict
+      const playPromise = video.play()
+      if (playPromise !== undefined) {
+        playPromise.catch(e => {
+          console.warn("Auto-play prevented (first try). Retrying aggressively...", e)
+          // Deuxième tentative forcée
+          video.muted = true
+          video.play().catch(e2 => console.error("Auto-play strictly blocked by browser", e2))
+        })
+      }
     }
 
     return () => {

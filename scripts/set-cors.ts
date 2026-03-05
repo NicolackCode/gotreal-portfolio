@@ -20,7 +20,7 @@ async function setCors() {
     
     const corsConfiguration = [
       {
-        method: ['GET', 'HEAD', 'OPTIONS'],
+        method: ['GET', 'HEAD', 'OPTIONS', 'PUT'], // Ajout de PUT
         origin: ['*'], // Ou remplacez par ['http://localhost:3000', 'https://votre-domaine.com']
         responseHeader: ['Content-Type', 'Access-Control-Allow-Origin', 'Range'],
         maxAgeSeconds: 3600,

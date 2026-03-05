@@ -16,6 +16,7 @@ type ProjectData = {
   priority?: string
   slug?: string
   rotation?: number
+  thumbnail_url?: string
 }
 
 type ProjectFormProps = {
@@ -24,12 +25,7 @@ type ProjectFormProps = {
   onSuccess: () => void
 }
 
-type MediaItem = {
-  name: string
-  url: string
-  updated?: string
-  size?: string
-}
+
 
 export default function ProjectForm({ project, onClose, onSuccess }: ProjectFormProps) {
   // Parse carousel if it was stored as string instead of Array (workaround constraint)
@@ -49,51 +45,153 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
   const [title, setTitle] = useState(project?.title || '')
   const [category, setCategory] = useState(project?.category || '')
   const [client, setClient] = useState(project?.client || '')
+  const [description, setDescription] = useState(project?.description || '')
   const [rank, setRank] = useState(project?.rank || 0)
   const [priority, setPriority] = useState(project?.priority || '')
   const [rotation, setRotation] = useState(project?.rotation || 0)
   
   // States des vidéos
   const [mainVideoUrl, setMainVideoUrl] = useState<string>(project?.main_video_url || '')
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>(project?.thumbnail_url || '')
   const [carouselUrls, setCarouselUrls] = useState<string[]>(initialCarousel)
   
   // Mode de sélection (main vs carousel) pour UI
   const [selectingFor, setSelectingFor] = useState<'main' | 'carousel'>('main')
   
-  const [mediaList, setMediaList] = useState<MediaItem[]>([])
-  const [loadingMedia, setLoadingMedia] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const supabase = createClient()
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchMedia() {
-      setLoadingMedia(true)
-      try {
-        const response = await fetch('/api/admin/media')
-        if (response.ok) {
-          const data: any[] = await response.json()
-          if (Array.isArray(data)) {
-            // Filtrer les fichiers inintéressants :
-            // on cache les flux v1 et v2 redondants (si existent), les fichiers .ts (illisibles), etc.
-            const filteredList = data
-              .filter(file => !file.name.endsWith('.ts'))
-              .filter(file => !file.name.includes('/v1/'))
-              .filter(file => !file.name.includes('/v2/'))
-              .map((file: any) => ({
-                name: file.name,
-                url: `${process.env.NEXT_PUBLIC_GCS_PUBLIC_URL}/${file.name}`
-              }))
-            setMediaList(filteredList)
-          }
-        }
-      } catch (error) {
-        console.error('Erreur chargement media:', error)
-      } finally {
-        setLoadingMedia(false)
+  // 📸 Utilitaire : Générer une miniature Canvas depuis un fichier Vidéo local
+  const generateThumbnailFromVideo = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video')
+      video.autoplay = false
+      video.muted = true
+      video.playsInline = true
+      video.src = URL.createObjectURL(file)
+
+      video.onloadedmetadata = () => {
+        // Avancer à 1 seconde ou à la moitié si vidéo courte
+        video.currentTime = Math.min(1, video.duration / 2)
       }
+
+      video.onseeked = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const fileName = file.name.replace(/\.[^/.]+$/, "") + "_thumbnail.jpg"
+              const thumbnailFile = new File([blob], fileName, { type: 'image/jpeg' })
+              resolve(thumbnailFile)
+            } else {
+              reject(new Error('Canvas toBlob failed'))
+            }
+          }, 'image/jpeg', 0.8) // Qualité 80%
+        } else {
+          reject(new Error('Pas de contexte Canvas'))
+        }
+        URL.revokeObjectURL(video.src)
+      }
+
+      video.onerror = (e) => {
+        URL.revokeObjectURL(video.src)
+        reject(e)
+      }
+    })
+  }
+  
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingMedia(true)
+    setUploadError(null)
+
+    try {
+      // Si c'est pour la vidéo Master, on tente de générer la miniature d'abord
+      let thumbnailFile: File | null = null
+      if (selectingFor === 'main' && file.type.startsWith('video/')) {
+         try {
+           thumbnailFile = await generateThumbnailFromVideo(file)
+         } catch (e) {
+           console.warn("Impossible de générer la miniature (vidéo non supportée ou erreur locale)", e)
+         }
+      }
+
+      // 1. Demander une URL signée au backend pour la vidéo (ou l'image carrousel)
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type })
+      })
+
+      if (!res.ok) {
+        throw new Error('Erreur lors de la génération de l\'URL d\'upload')
+      }
+
+      const { signedUrl, publicUrl } = await res.json()
+
+      // 2. Transférer le fichier (upload direct)
+      const uploadRes = await fetch(signedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file
+      })
+
+      if (!uploadRes.ok) {
+        throw new Error('Erreur lors du transfert vers le serveur clould')
+      }
+
+      // Si miniature générée, on l'upload aussi !
+      let finalThumbnailUrl = ''
+      if (thumbnailFile) {
+         const thumbRes = await fetch('/api/admin/upload', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ filename: thumbnailFile.name, contentType: thumbnailFile.type })
+         })
+         
+         if (thumbRes.ok) {
+             const { signedUrl: thumbSignedUrl, publicUrl: thumbPublicUrl } = await thumbRes.json()
+             const thumbUploadRes = await fetch(thumbSignedUrl, {
+               method: 'PUT',
+               headers: { 'Content-Type': thumbnailFile.type },
+               body: thumbnailFile
+             })
+             
+             if (thumbUploadRes.ok) {
+                finalThumbnailUrl = thumbPublicUrl
+             }
+         }
+      }
+
+      // 3. Mettre à jour l'état local dans le formulaire
+      if (selectingFor === 'main') {
+        setMainVideoUrl(publicUrl)
+        if (finalThumbnailUrl) {
+           setThumbnailUrl(finalThumbnailUrl)
+        }
+      } else {
+        if (!carouselUrls.includes(publicUrl)) {
+          setCarouselUrls([...carouselUrls, publicUrl])
+        }
+      }
+
+    } catch (error) {
+      console.error("Upload failed", error)
+      setUploadError(error instanceof Error ? error.message : "Erreur inconnue")
+    } finally {
+      setIsUploadingMedia(false)
+      // Reset input value pour permettre d'uploader le même fichier 2 fois si besoin
+      e.target.value = ''
     }
-    fetchMedia()
-  }, [])
+  }
 
   // Mini-player pour preview la Master Video
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -111,15 +209,8 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
     return () => { if (hls) hls.destroy() }
   }, [mainVideoUrl])
 
-  const handleSelectMedia = (url: string) => {
-    if (selectingFor === 'main') {
-      setMainVideoUrl(url)
-    } else {
-      if (!carouselUrls.includes(url)) {
-        setCarouselUrls([...carouselUrls, url])
-      }
-    }
-  }
+  // Géré via l'upload
+  // const handleSelectMedia = (url: string) => {...}
 
   const handleRemoveCarouselVideo = (urlToRemove: string) => {
     setCarouselUrls(prev => prev.filter(url => url !== urlToRemove))
@@ -170,10 +261,11 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
         slug: expectedSlug,
         category: category,
         client: client,
-        description: project?.description || '',
+        description: description,
         rank,
         priority: priority || null,
         rotation,
+        thumbnail_url: thumbnailUrl,
         main_video_url: mainVideoUrl,
         video_url: mainVideoUrl, // Patcher la contrainte NOT NULL de l'ancienne DB
         carousel_urls: JSON.stringify(carouselUrls) // Stocker en string si la colonne est type Text
@@ -246,6 +338,16 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
                   className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg focus:border-cyan-500 focus:bg-zinc-800/50 transition-colors outline-none text-sm shadow-inner" 
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase text-zinc-500 mb-1.5 font-bold tracking-widest">Description</label>
+              <textarea 
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg focus:border-cyan-500 focus:bg-zinc-800/50 transition-colors outline-none text-sm placeholder:text-zinc-600 shadow-inner min-h-[100px] resize-y custom-scrollbar" 
+                placeholder="Détails du projet, crédits..."
+              />
             </div>
             
             <div>
@@ -356,83 +458,78 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
           </div>
         </div>
 
-        {/* Colonne de droite: Médiathèque Cloud Pleine Hauteur */}
+        {/* Colonne de droite: Import Direct */}
         <div className="flex-1 bg-black flex flex-col h-full relative z-0">
           <div className="p-6 sm:p-12 pb-6 flex flex-col h-full border-l border-zinc-900 shadow-inner bg-gradient-to-b from-zinc-950 to-black">
              <div className="flex items-end justify-between mb-8 pb-6 border-b border-zinc-900">
                <div>
-                  <h3 className="text-xl uppercase tracking-widest font-black text-zinc-100 flex items-center gap-3">
-                    Librairie Cloud
-                    <span className="text-[9px] bg-cyan-950 text-cyan-500 border border-cyan-900/50 px-2 py-1 rounded font-bold uppercase">En direct</span>
+                  <h3 className="text-xl uppercase tracking-widest font-black text-white flex items-center gap-3">
+                    Importer un Média
                   </h3>
-                  <p className="text-[10px] text-zinc-500 mt-2 uppercase tracking-wide">Fichiers techniques (.ts) masqués pour plus de clarté.</p>
+                  <p className="text-[10px] text-zinc-500 mt-2 uppercase tracking-wide">Transféré directement vers le Cloud sécurisé.</p>
                </div>
              </div>
 
-          <div className="flex gap-2 mb-8 relative z-10 p-1.5 bg-zinc-900 border border-zinc-800 rounded-xl">
-             <button 
-               type="button"
-               onClick={() => setSelectingFor('main')}
-               className={`flex-1 py-3 text-[10px] uppercase tracking-widest rounded-lg transition-all font-bold ${selectingFor === 'main' ? 'bg-cyan-500 text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800'}`}
-             >
-               ▶ SELECT MASTER VIA CLIC
-             </button>
-             <button 
-               type="button"
-               onClick={() => setSelectingFor('carousel')}
-               className={`flex-1 py-3 text-[10px] uppercase tracking-widest rounded-lg transition-all font-bold hidden`} // Caché pour l'instant
-             >
-               SELECT CAROUSEL (DEV)
-             </button>
-          </div>
+            <div className="flex gap-2 mb-8 relative z-10 p-1.5 bg-zinc-900 border border-zinc-800 rounded-xl">
+               <button 
+                 type="button"
+                 onClick={() => setSelectingFor('main')}
+                 className={`flex-1 py-3 text-[10px] uppercase tracking-widest rounded-lg transition-all font-bold ${selectingFor === 'main' ? 'bg-cyan-500 text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800'}`}
+               >
+                 ASSIGNER MASTER (Video principale)
+               </button>
+               <button 
+                 type="button"
+                 onClick={() => setSelectingFor('carousel')}
+                 className={`flex-1 py-3 text-[10px] uppercase tracking-widest rounded-lg transition-all font-bold ${selectingFor === 'carousel' ? 'bg-cyan-500 text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800'}`}
+               >
+                 ASSIGNER AU CARROUSEL
+               </button>
+            </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar relative z-10 pr-4">
-            {loadingMedia ? (
-              <div className="flex flex-col items-center justify-center p-12 text-zinc-500 gap-6 mt-10">
-                 <div className="w-8 h-8 border-4 border-zinc-800 border-t-cyan-500 rounded-full animate-spin" />
-                 <span className="text-[10px] uppercase font-bold tracking-[0.2em]">Listing S3 Files...</span>
-              </div>
-            ) : mediaList.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-12 gap-4 mt-10 text-zinc-600 border-2 border-dashed border-zinc-900 rounded-2xl">
-                 <span className="text-4xl opacity-20">📭</span>
-                 <p className="text-[10px] uppercase tracking-[0.2em] font-bold">Bucket vide</p>
-              </div>
-            ) : (
-              mediaList.map((media) => {
-                const isMain = mainVideoUrl === media.url
-                const friendlyTitle = formatFriendlyName(media.url)
-                
-                let fileClass = 'text-zinc-500 hover:bg-zinc-900/80 hover:text-white border border-transparent'
-                if (isMain) fileClass = 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-black shadow-[0_0_15px_rgba(34,211,238,0.05)]'
-
-                return (
-                  <div 
-                    key={media.name}
-                    onClick={() => handleSelectMedia(media.url)}
-                    className={`p-4 rounded-xl cursor-pointer text-xs transition-all flex items-center justify-between group ${fileClass}`}
-                  >
-                    <div className="flex-1 min-w-0 pr-4 flex items-center gap-3">
-                       {isMain ? (
-                         <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500 text-black text-[10px] font-bold flex-shrink-0">✓</span>
-                       ) : (
-                         <span className="flex items-center justify-center w-6 h-6 rounded-full bg-zinc-900 border border-zinc-800 group-hover:border-zinc-700 text-[10px] text-zinc-700 flex-shrink-0 transition-colors">+</span>
-                       )}
-                       <span className="truncate tracking-wide">{friendlyTitle}</span>
+            <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar relative z-10 pr-4 flex flex-col">
+              
+              {/* Zone Upload Drag&Drop */}
+              <div className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-8 transition-colors text-center ${isUploadingMedia ? 'border-cyan-500 bg-cyan-500/10' : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-900/60'}`}>
+                {isUploadingMedia ? (
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="w-12 h-12 border-4 border-zinc-800 border-t-cyan-500 rounded-full animate-spin" />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm uppercase font-bold tracking-[0.2em] text-cyan-500">Transfert en cours...</span>
+                      <span className="text-[10px] text-zinc-500">Ne fermez pas cette page.</span>
                     </div>
-                    {/* Badge type optionnel */}
-                    <span className="text-[8px] bg-zinc-900 text-zinc-600 px-2 py-1 rounded uppercase font-bold tracking-widest flex-shrink-0 group-hover:bg-zinc-800 transition-colors">.M3U8 HLS</span>
                   </div>
-                )
-              })
-            )}
-          </div>
-          
-          <div className="mt-4 pt-4 border-t border-zinc-800 text-xs text-zinc-500">
-            * Clic sur un fichier Cloud pour l&apos;assigner à la sélection active. Actuellement l&apos;envoi de fichier depuis l&apos;UI locale est désactivé au profit de la sélection directe depuis le bucket pour le mapping V1.
+                ) : (
+                  <>
+                    <span className="text-5xl opacity-40 mb-6 drop-shadow-md">📤</span>
+                    <p className="text-sm font-bold text-white uppercase tracking-widest mb-2">Sélectionner un fichier</p>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-8">.mp4, .mov, ou images supportés</p>
+                    
+                    <label className="bg-white hover:bg-zinc-200 text-black text-xs font-black uppercase tracking-widest px-8 py-4 rounded-xl hover:scale-105 transition-transform cursor-pointer shadow-xl">
+                      Parcourir votre ordinateur
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="video/mp4,video/quicktime,image/*" 
+                        onChange={handleFileUpload} 
+                        disabled={isUploadingMedia}
+                      />
+                    </label>
+                  </>
+                )}
+              </div>
+
+              {/* Affichage Error */}
+              {uploadError && (
+                 <div className="bg-red-500/10 border border-red-500/30 text-red-500 text-xs p-4 rounded-xl text-center font-bold uppercase tracking-widest">
+                    {uploadError}
+                 </div>
+              )}
+
+            </div>
           </div>
         </div>
 
-      </div>
     </div>
   )
 }

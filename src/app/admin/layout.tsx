@@ -26,7 +26,9 @@ export default function AdminLayout({
           </Link>
           <nav className="text-sm tracking-widest text-zinc-500 uppercase flex gap-4 hidden sm:flex">
             <Link href="/admin/dashboard" className="hover:text-white transition-colors">Liste Importer</Link>
-            <Link href="/admin/media" className="hover:text-white transition-colors">Médiathèque</Link>
+            <Link href="/admin/grid" className="text-red-500 hover:text-red-400 font-bold transition-colors border-b border-transparent hover:border-red-500">
+              Édition Grille
+            </Link>
           </nav>
         </div>
         <button 
@@ -37,7 +39,7 @@ export default function AdminLayout({
         </button>
       </header>
       
-      <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+      <main className="flex-1 w-full px-4 md:px-8 mx-auto">
         {children}
       </main>
     </div>

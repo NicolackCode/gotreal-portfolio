@@ -241,6 +241,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
   const [volume, setVolume] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isBuffering, setIsBuffering] = useState(false)
+  const [loadedPercent, setLoadedPercent] = useState(0)
 
   // ---- HOVER TOOLTIP & LOCAL STORAGE ----
   const [hoverTime, setHoverTime] = useState<number | null>(null)
@@ -362,6 +363,13 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
     
     const handleWaiting = () => setIsBuffering(true)
     const handlePlaying = () => setIsBuffering(false)
+    const handleProgress = () => {
+      if (video.buffered.length > 0) {
+         const bufferedEnd = video.buffered.end(video.buffered.length - 1)
+         const dur = video.duration || 1
+         setLoadedPercent((bufferedEnd / dur) * 100)
+      }
+    }
 
     // Init HLS & Source
     if (Hls.isSupported() && currentProject?.video_url && currentProject.video_url.includes('.m3u8')) {
@@ -410,6 +418,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
     video.addEventListener('waiting', handleWaiting)
     video.addEventListener('playing', handlePlaying)
     video.addEventListener('canplay', handlePlaying)
+    video.addEventListener('progress', handleProgress)
     
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate)
@@ -417,6 +426,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
       video.removeEventListener('waiting', handleWaiting)
       video.removeEventListener('playing', handlePlaying)
       video.removeEventListener('canplay', handlePlaying)
+      video.removeEventListener('progress', handleProgress)
       if (hlsRef.current) {
         hlsRef.current.destroy()
         hlsRef.current = null
@@ -704,7 +714,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
             <div className={`w-[100vw] h-full flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 pointer-events-none ${isDragging ? 'opacity-80 scale-90' : 'opacity-40 scale-75'}`} style={{ minWidth: '100vw', width: '100vw' }}>
               <video 
                 src={getPrevProject()?.video_url}
-                className="max-h-full max-w-full object-contain shadow-2xl transition-transform duration-500"
+                className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500"
                 style={getPlayerRotationStyle(getPrevProject()?.rotation)}
                 muted playsInline crossOrigin="anonymous" 
               />
@@ -722,7 +732,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
           <video 
             ref={videoRef}
             draggable={false}
-            className="w-full h-full object-contain shadow-2xl transition-all duration-500 ease-in-out"
+            className="w-full h-full object-contain drop-shadow-2xl transition-all duration-500 ease-in-out"
             style={getPlayerRotationStyle(currentProject?.rotation)}
             autoPlay
             loop={projects.length === 1} // Ne boucle que s'il est tout seul. Sinon on passe au suivant.
@@ -740,11 +750,12 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
         
         {projects.length > 1 && (
             <div className={`w-[100vw] h-full flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 pointer-events-none ${isDragging ? 'opacity-80 scale-90' : 'opacity-40 scale-75'}`} style={{ minWidth: '100vw', width: '100vw' }}>
+              {/* Fallback visuel, ne pas précharger les grosses vidéos invisibles */}
               <video 
                 src={getNextProject()?.video_url}
-                className="max-h-full max-w-full object-contain shadow-2xl transition-transform duration-500"
+                className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500"
                 style={getPlayerRotationStyle(getNextProject()?.rotation)}
-                muted playsInline crossOrigin="anonymous" 
+                muted playsInline crossOrigin="anonymous" preload="metadata"
               />
             </div>
         )}
@@ -797,6 +808,13 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
             />
             {/* Base Bar */}
             <div className="w-full h-[2px] bg-white/20 pointer-events-none group-hover/progress:h-1 transition-all" />
+            
+            {/* Loaded/Buffered Bar */}
+            <div 
+              className="absolute left-0 h-[2px] bg-white/40 pointer-events-none group-hover/progress:h-1 transition-all"
+              style={{ width: `${loadedPercent}%` }}
+            />
+
             {/* Fill Bar */}
             <div 
               className="absolute left-0 h-[2px] bg-cyan-400 pointer-events-none group-hover/progress:h-1 transition-all"

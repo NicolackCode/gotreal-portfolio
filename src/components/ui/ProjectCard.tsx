@@ -10,6 +10,7 @@ interface Project {
   category: string;
   client?: string;
   main_video_url?: string;
+  thumbnail_url?: string;
   rotation?: number;
 }
 
@@ -22,7 +23,8 @@ export default function ProjectCard({
   project: Project, 
   priorityLoad?: boolean, 
   globalIsMuted?: boolean,
-  onFormatLoaded?: (id: string, format: 'vertical' | 'horizontal') => void
+  onFormatLoaded?: (id: string, format: 'vertical' | 'horizontal') => void,
+  spanData?: string
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLAnchorElement>(null)
@@ -77,7 +79,12 @@ export default function ProjectCard({
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting && videoRef.current) {
-          videoRef.current.play().catch(() => {})
+          // Si c'est du HLS, on peut se permettre de pré-jouer en muet dans la grille car c'est léger.
+          // Si c'est un fichier MP4 brut, on interdit l'autoplay simultané pour éviter la saturation réseau,
+          // on gardera seulement le Play au hover.
+          if (project.main_video_url?.includes('.m3u8')) {
+            videoRef.current.play().catch(() => {})
+          }
         } else if (videoRef.current) {
           videoRef.current.pause()
         }
@@ -90,7 +97,7 @@ export default function ProjectCard({
     return () => {
        if (currentContainer) observer.unobserve(currentContainer)
     }
-  }, [])
+  }, [project.main_video_url])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
@@ -141,6 +148,7 @@ export default function ProjectCard({
               loop
               muted
               playsInline
+              poster={project.thumbnail_url}
               preload={priorityLoad ? "auto" : "metadata"}
               // La vidéo interne compense sa rotation pour object-cover
               style={{

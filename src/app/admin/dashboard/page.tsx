@@ -1,25 +1,36 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
+import Link from 'next/link';
 import ProjectForm from "@/components/admin/ProjectForm";
 import GridEditor from "./GridEditor";
 
+export interface Project {
+  id: string;
+  title: string;
+  category?: string;
+  client?: string;
+  description?: string;
+  main_video_url?: string;
+  carousel_urls?: string[];
+  thumbnail_url?: string;
+  rank: number;
+  is_visible?: boolean;
+  forced_span?: string;
+  priority?: string;
+}
+
 export default function DashboardPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [currentEditProject, setCurrentEditProject] = useState<any | null>(
-    null,
-  );
+  const [currentEditProject, setCurrentEditProject] = useState<Project | null>(null);
 
   const supabase = createClient();
 
-  const loadProjects = useCallback(async () => {
+  const loadProjects = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("projects")
@@ -39,15 +50,15 @@ export default function DashboardPage() {
       setProjects(data);
     }
     setLoading(false);
-  }, [supabase]);
+  };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     loadProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEdit = (project: any) => {
+   
+  const handleEdit = (project: Project) => {
     setCurrentEditProject(project);
     setIsFormOpen(true);
   };
@@ -110,6 +121,12 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex gap-4">
+          <Link 
+            href="/admin/grid"
+            className="hidden sm:block bg-red-900/20 text-red-500 border border-red-500/50 hover:bg-red-900/40 px-4 py-2 text-sm uppercase font-bold transition-colors whitespace-nowrap"
+          >
+            ORGANISER GRILLE
+          </Link>
           <button
             onClick={() => {
               setCurrentEditProject(null);
@@ -117,7 +134,7 @@ export default function DashboardPage() {
             }}
             className="bg-white text-black px-4 py-2 text-sm uppercase font-bold hover:bg-zinc-200 transition-colors whitespace-nowrap"
           >
-            + Nouveau Projet
+            + Nouveau
           </button>
         </div>
       </div>

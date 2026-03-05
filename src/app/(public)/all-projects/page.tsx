@@ -34,19 +34,19 @@ export default async function AllProjectsPage() {
           ARCHIVES
         </h1>
         <p className="font-mono text-zinc-500 text-[10px] sm:text-xs uppercase tracking-[0.2em] max-w-lg">
-          A CUREATED SELECTION OF COMMERCIAL, MUSIC VIDEO AND CREATIVE PROJECTS. 
+          UNE SÉLECTION DE PROJETS COMMERCIAUX, CLIPS MUSICAUX ET CRÉATIFS. 
         </p>
       </div>
 
-      {/* GRILLE DES PROJETS */}
-      <div className="relative z-10">
+      {/* GRILLE DES PROJETS (FULL WIDTH 100VW BORD À BORD) */}
+      <div className="relative z-10 w-full overflow-hidden">
         <MasonryGrid projects={projectsData || []} />
       </div>
       
       {/* FOOTER PUBLIC */}
       <footer className="w-full border-t border-zinc-900 py-12 text-center mt-20">
         <p className="font-sans font-bold text-zinc-500 text-[10px] md:text-xs uppercase tracking-[0.3em]">
-           © {new Date().getFullYear()} GOTREAL - ALL RIGHTS RESERVED.
+           © {new Date().getFullYear()} GOTREAL - TOUS DROITS RÉSERVÉS.
         </p>
       </footer>
     </main>

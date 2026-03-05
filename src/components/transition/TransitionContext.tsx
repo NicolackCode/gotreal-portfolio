@@ -16,28 +16,40 @@ export const useTransitionContext = () => useContext(TransitionContext)
 
 export function TransitionProvider({ children }: { children: React.ReactNode }) {
   const [isNavigating, setIsNavigating] = useState(false)
+  const [progress, setProgress] = useState(0)
   const pathname = usePathname()
   const router = useRouter()
-
-  // Fermer le loader après que le pathname ait changé (et que Nextjs ait hydraté la nouvelle page).
-  useEffect(() => {
-    if (isNavigating) {
-      setTimeout(() => {
-        setIsNavigating(false)
-      }, 500)
-    }
-  }, [pathname, isNavigating])
 
   const navigate = (href: string) => {
     // Si on est déjà sur la page, ne rien faire
     if (href === pathname) return 
     
     setIsNavigating(true)
+    setProgress(0)
     
     // Attendre que l'animation d'entrée du loader masque l'écran (0.4s) avant de forcer Next.js à charger la longue page
     setTimeout(() => {
       router.push(href)
     }, 450)
+
+    // Faux chargement (ProgressBar) garanti pendant la transition
+    const duration = 1200 // 1.2 secondes de transition imposées pour l'esthétique
+    const interval = 30
+    const steps = duration / interval
+    let currentStep = 0
+
+    const timer = setInterval(() => {
+      currentStep++
+      const percentage = Math.min(Math.round((currentStep / steps) * 100), 100)
+      setProgress(percentage)
+
+      if (currentStep >= steps) {
+        clearInterval(timer)
+        setTimeout(() => {
+          setIsNavigating(false)
+        }, 200) // Maintien court à 100% avant disparition
+      }
+    }, interval)
   }
 
   return (
@@ -64,14 +76,24 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
               GOTREAL
             </motion.h1>
 
-            <div className="absolute bottom-24 w-full flex flex-col items-center gap-4">
+            {/* Bottom UI : Compteur progressif */}
+            <div className="absolute bottom-24 w-full px-8 md:px-24 flex flex-col items-center gap-4">
               <motion.div 
-                animate={{ opacity: [0.3, 1, 0.3] }}
-                transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                className="font-mono text-xs md:text-sm uppercase tracking-[0.4em] text-zinc-500"
+                exit={{ opacity: 0 }}
+                className="font-mono text-sm md:text-base uppercase tracking-[0.4em] text-zinc-500"
               >
-                CHARGEMENT...
+                {progress.toString().padStart(3, '0')}% REC
               </motion.div>
+              
+              {/* Barre de progression ultra-fine minimaliste */}
+              <div className="w-full max-w-sm h-[1px] bg-white/20 relative overflow-hidden">
+                <motion.div
+                  className="absolute top-0 left-0 bottom-0 bg-white"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.1, ease: 'linear' }}
+                />
+              </div>
             </div>
           </motion.div>
         )}

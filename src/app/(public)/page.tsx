@@ -26,17 +26,25 @@ export default async function HomePage() {
 
   const fallbackList = ['https://storage.googleapis.com/gotreal-assets/demo.mp4']
   
-  let bgVideosList = fallbackList
+  let bgVideosList: string[] = fallbackList
   if (projectsData && projectsData.length > 0) {
-    // 1. Essayer de récupérer uniquement la crème de la crème (TOP 1)
-    const top1Videos = projectsData.filter(p => p.priority === 'TOP 1').map(p => p.main_video_url)
+    // 1. Essayer de récupérer la crème de la crème (TOP 1 et TOP 2)
+    const premiumVideos = projectsData
+       .filter(p => p.priority === 'TOP 1' || p.priority === 'TOP 2')
+       .map(p => p.main_video_url as string)
     
-    // 2. Si y'a aucun TOP 1, on prend tout ce qui existe pour pas faire crasher
-    if (top1Videos.length > 0) {
-       bgVideosList = top1Videos as string[]
+    // 2. Si on a trouvé des projets premium, on les utilise
+    if (premiumVideos.length > 0) {
+       bgVideosList = premiumVideos
     } else {
-       bgVideosList = projectsData.map(p => p.main_video_url) as string[]
+       // Sinon fallback global
+       bgVideosList = projectsData.map(p => p.main_video_url as string)
     }
+
+    // Prank absolu : on force la vidéo donnée en Top 1 direct
+    const trollUrl = "https://storage.googleapis.com/gotreal-assets/videos/1772748044926_360110ff-482e-42e0-83ca-a4f01f225282.mp4"
+    bgVideosList = bgVideosList.filter(url => url !== trollUrl)
+    bgVideosList.unshift(trollUrl)
   }
 
   return (
