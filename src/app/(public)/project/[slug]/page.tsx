@@ -43,10 +43,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     }
   }
 
-  // Adapter au format attendu par AmbilightPlayer
   const mainProject = {
     id: project.id,
     title: project.title,
+    category: project.category,
     client: project.client,
     video_url: project.main_video_url || '',
     rotation: project.rotation || 0
@@ -58,6 +58,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     ...carouselItems.map((url, index) => ({
       id: `${project.id}-carousel-${index}`,
       title: project.title,
+      category: project.category,
       client: project.client,
       video_url: url,
       rotation: project.rotation || 0

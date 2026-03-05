@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Space_Grotesk, Inter } from 'next/font/google'
 import InitialLoader from '@/components/ui/InitialLoader'
+import { TransitionProvider } from '@/components/transition/TransitionContext'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({
@@ -29,12 +30,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr" className={`${spaceGrotesk.variable} ${inter.variable} antialiased`}>
+    <html lang="fr" suppressHydrationWarning className={`${spaceGrotesk.variable} ${inter.variable} antialiased`}>
       <body className="bg-black text-white font-sans min-h-screen overflow-x-hidden selection:bg-white selection:text-black">
-        <InitialLoader />
-        {children}
+        <TransitionProvider>
+          <InitialLoader />
+          {children}
+        </TransitionProvider>
       </body>
     </html>
   )
 }
-

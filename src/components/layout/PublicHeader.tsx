@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import TransitionLink from '@/components/transition/TransitionLink'
 
 export default function PublicHeader() {
   const [isOpen, setIsOpen] = useState(false)
@@ -14,13 +14,13 @@ export default function PublicHeader() {
         
         {/* LOGO TITLE MASSIVE */}
         <div className="flex flex-col gap-1 pointer-events-auto">
-          <Link 
+          <TransitionLink 
             href="/" 
             className="text-2xl md:text-3xl font-sans font-black tracking-tighter uppercase hover:opacity-70 transition-opacity"
             onClick={() => setIsOpen(false)}
           >
             GOTREAL
-          </Link>
+          </TransitionLink>
           <span className="text-[10px] font-mono uppercase tracking-[0.3em] opacity-80 mt-1">
             DIRECTOR & DOP
           </span>
@@ -54,20 +54,20 @@ export default function PublicHeader() {
         </div>
 
         <nav className="flex flex-col gap-8 md:gap-12 mt-20">
-          <Link 
+          <TransitionLink 
             href="/all-projects" 
             onClick={() => setIsOpen(false)}
             className="text-5xl md:text-7xl lg:text-8xl font-sans font-black uppercase tracking-tighter hover:text-zinc-500 transition-colors origin-left hover:scale-[1.02]"
           >
             PROJETS.
-          </Link>
-          <Link 
+          </TransitionLink>
+          <TransitionLink 
             href="/about" 
             onClick={() => setIsOpen(false)}
             className="text-5xl md:text-7xl lg:text-8xl font-sans font-black uppercase tracking-tighter hover:text-zinc-500 transition-colors origin-left hover:scale-[1.02]"
           >
             À PROPOS.
-          </Link>
+          </TransitionLink>
           <a 
             href="mailto:gotrealisation@gmail.com?subject=Nouvelle collaboration / Demande de projet&body=Bonjour Gauthier,%0A%0AJe te contacte pour évoquer un futur projet avec toi...%0A%0A[Détaille ici ton besoin, le style, les dates...]" 
             onClick={() => setIsOpen(false)}

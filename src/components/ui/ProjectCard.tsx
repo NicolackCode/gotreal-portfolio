@@ -1,31 +1,62 @@
 import React, { useRef, useState, useEffect } from 'react'
-import Link from 'next/link'
+import TransitionLink from '@/components/transition/TransitionLink'
 import Hls from 'hls.js'
+import { motion } from 'framer-motion'
 
 interface Project {
   id: string;
   title: string;
   slug?: string;
-  client: string;
+  category: string;
+  client?: string;
   main_video_url?: string;
   rotation?: number;
 }
 
-export default function ProjectCard({ project, priorityLoad = false, globalIsMuted = true }: { project: Project, priorityLoad?: boolean, globalIsMuted?: boolean }) {
+export default function ProjectCard({ 
+  project, 
+  priorityLoad = false, 
+  globalIsMuted = true,
+  onFormatLoaded
+}: { 
+  project: Project, 
+  priorityLoad?: boolean, 
+  globalIsMuted?: boolean,
+  onFormatLoaded?: (id: string, format: 'vertical' | 'horizontal') => void
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLAnchorElement>(null)
   const [isHovered, setIsHovered] = useState(false)
   const hlsRef = useRef<Hls | null>(null)
 
-  // Initialisation de la source vidéo (MP4 ou HLS)
+  const isRotatedVertical = project.rotation === 90 || project.rotation === -90 || project.rotation === 270
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current && onFormatLoaded) {
+       const vw = videoRef.current.videoWidth
+       const vh = videoRef.current.videoHeight
+       if (vw && vh) {
+          let isVert = false;
+          if (isRotatedVertical) {
+             // Si la vidéo a été tournée post-prod de 90°, sa physique est inversée
+             isVert = vw > vh; // une vidéo 1920x1080 (horiz) tournée à 90 devieent un 1080x1920 (vert)
+          } else {
+             isVert = vh > vw;
+          }
+          // On prévient le parent de la vraie forme validée par physique
+          onFormatLoaded(project.id, isVert ? 'vertical' : 'horizontal');
+       }
+    }
+  }
+
   useEffect(() => {
     const video = videoRef.current
     if (!video || !project.main_video_url) return
 
     if (project.main_video_url.includes('.m3u8') && Hls.isSupported()) {
       const hls = new Hls({
-        capLevelToPlayerSize: false, // DANGEROUS on vertical videos: Forces incorrect aspect ratio cropping based on wrapper!
-        startLevel: 0 // Force la plus basse qualité au démarrage pour économiser la bande passante
+        capLevelToPlayerSize: false,
+        startLevel: 0 
       })
       hlsRef.current = hls
       hls.loadSource(project.main_video_url)
@@ -42,15 +73,10 @@ export default function ProjectCard({ project, priorityLoad = false, globalIsMut
     }
   }, [project.main_video_url])
 
-  // Intersection Observer pour ne jouer la vidéo que si elle est visible à l'écran (opti de perf vitale)
   useEffect(() => {
-    // La priorité absolue est de ne jamais écouter "isHovered" sinon
-    // l'Observer se détache puis se réattache, forçant un appel .play()
-    // unmuted que Google Chrome bloque et jette ! Le bug venait de là !
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting && videoRef.current) {
-          // Si on est visible, on fait tourner la vidéo. Si elle est muette (par défaut), ça passe.
           videoRef.current.play().catch(() => {})
         } else if (videoRef.current) {
           videoRef.current.pause()
@@ -64,34 +90,28 @@ export default function ProjectCard({ project, priorityLoad = false, globalIsMut
     return () => {
        if (currentContainer) observer.unobserve(currentContainer)
     }
-  }, []) // AUCUNE dépendance.
+  }, [])
 
-  // Gestion du SURVOL de souris = Tente d'UNMUTE le son
   const handleMouseEnter = () => {
     setIsHovered(true)
     if (videoRef.current) {
-      // On tente d'activer le son uniquement si l'utilisateur a autorisé l'audio globalement
       if (!globalIsMuted) {
         videoRef.current.muted = false
         videoRef.current.volume = 1
       }
       
-      // On relance explicitement le play() car le navigateur met la vidéo en pause
-      // s'il refuse l'activation du son (Politique Autoplay : "User didn't interact")
       const playPromise = videoRef.current.play()
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          // Si le navigateur bloque le son, on coupe le son pour au moins garder l'image animée !
           if (videoRef.current) {
             videoRef.current.muted = true
-            videoRef.current.play().catch(() => {}) // relance silencieuse
+            videoRef.current.play().catch(() => {})
           }
         })
       }
     }
   }
 
-  // Fin du survol = REMUTE le son
   const handleMouseLeave = () => {
     setIsHovered(false)
     if (videoRef.current) {
@@ -99,52 +119,60 @@ export default function ProjectCard({ project, priorityLoad = false, globalIsMut
     }
   }
 
-  // Astuce Bento: transféré au parent (MasonryGrid)
   return (
-    <Link 
+    <TransitionLink 
       href={project.slug ? `/project/${project.slug}` : `/project/${encodeURIComponent(project.title)}`}
       ref={containerRef}
-      className={`group relative block w-full h-full overflow-hidden bg-black border border-zinc-900 cursor-pointer`}
+      className={`block w-full h-full outline-none`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
+      <motion.div 
+        // Effet Eyecannndy : Le cadre scale légèrement et luit en rose au hover
+        whileHover={{ scale: 1.03, zIndex: 10 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="relative w-full h-full overflow-hidden bg-zinc-950 rounded-2xl group shadow-[0_0_0_transparent] hover:shadow-[0_0_20px_rgba(236,72,153,0.35)]"
+      >
         {project.main_video_url ? (
-          <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 w-full h-full">
             <video
               ref={videoRef}
+              onLoadedMetadata={handleLoadedMetadata}
               loop
-              muted // Strictement muet à l'initialisation pour le navigateur
+              muted
               playsInline
               preload={priorityLoad ? "auto" : "metadata"}
+              // La vidéo interne compense sa rotation pour object-cover
               style={{
                  '--rot': project.rotation ? `${project.rotation}deg` : '0deg',
-                 '--base-scl': (project.rotation === 90 || project.rotation === -90) ? '1.35' : '1',
-                 '--hover-scl': (project.rotation === 90 || project.rotation === -90) ? '1.40' : '1.05',
+                 '--base-scl': isRotatedVertical ? '1.78' : '1',
                  transform: `rotate(var(--rot)) scale(var(--base-scl))`,
               } as React.CSSProperties}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-[cubic-bezier(0.19,1,0.22,1)] hover:z-10 group-hover:[transform:rotate(var(--rot))_scale(var(--hover-scl))]"
+              className="absolute inset-0 w-full h-full object-cover origin-center transition-transform duration-700 ease-out z-0 group-hover:scale-[1.05]"
             />
           </div>
         ) : (
-           <div className="w-full h-full min-h-[250px] bg-zinc-900 flex items-center justify-center font-mono text-xs text-zinc-700 uppercase">
+           <div className="w-full h-full flex items-center justify-center font-mono text-xs text-zinc-700 uppercase">
              Media Indisponible
            </div>
         )}
         
-        {/* Assombrissement par défaut */}
-        <div className={`absolute inset-0 bg-black/40 transition-opacity duration-500 pointer-events-none ${isHovered ? 'opacity-0' : 'opacity-100'}`} />
-      </div>
+        {/* Assombrissement qui disparaît au passage (Focus on the video) - Reduit de 50% à 20-30% pour qu'on voit mieux les vidéos */}
+        <div className={`absolute inset-0 bg-black/30 transition-opacity duration-300 pointer-events-none z-10 ${isHovered ? 'opacity-0' : 'opacity-100'}`} />
 
-      {/* Titres Brutalist */}
-      <div className="absolute inset-0 p-6 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-none z-10 bg-black/60 pointer-events-none">
-        <h3 className="text-white text-2xl sm:text-4xl font-sans font-black uppercase tracking-tighter leading-none mb-2">
-          {project.title}
-        </h3>
-        <p className="text-zinc-400 text-xs sm:text-sm font-mono uppercase tracking-[0.2em]">
-          {project.client}
-        </p>
-      </div>
-    </Link>
+        {/* Détails textuels qui apparaissent au bottom-left */}
+        <div className="absolute inset-0 p-4 sm:p-6 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 bg-gradient-to-t from-black/80 via-transparent pointer-events-none rounded-2xl">
+          <h3 className={`text-white font-sans font-black uppercase tracking-tighter leading-none mb-1 shadow-sm drop-shadow-md text-xl sm:text-3xl`}>
+            {project.title}
+          </h3>
+          <p className="text-pink-400 text-[10px] sm:text-xs font-mono uppercase tracking-widest shadow-sm drop-shadow-sm font-bold">
+            {project.client || project.category} {project.category && project.client && project.category !== project.client ? `• ${project.category}` : ''}
+          </p>
+        </div>
+        
+        {/* Bordure subtile au hover faon Neon */}
+        <div className="absolute inset-0 border-2 border-transparent group-hover:border-pink-500/50 rounded-2xl transition-colors duration-300 pointer-events-none z-30" />
+      </motion.div>
+    </TransitionLink>
   )
 }

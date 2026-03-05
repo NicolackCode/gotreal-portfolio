@@ -6,7 +6,8 @@ import Hls from 'hls.js'
 type Project = {
   id: string
   title: string
-  client: string
+  category?: string
+  client?: string
   video_url: string
   rotation?: number
 }

@@ -7,7 +7,8 @@ import ProjectForm from '@/components/admin/ProjectForm'
 interface Project {
   id: string;
   title: string;
-  client: string;
+  category: string;
+  client?: string;
   description: string;
   main_video_url: string;
   carousel_urls: string[];
@@ -36,9 +37,8 @@ export default function MediaPage() {
   }, [supabase])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     loadProjects()
-  }, [])
+  }, [loadProjects])
 
   const handleEdit = (project: Project) => {
     setCurrentEditProject(project)
@@ -52,9 +52,9 @@ export default function MediaPage() {
     }
   }
 
-  // Grouper les projets par client (Catégorie)
+  // Grouper les projets par Catégorie
   const groupedProjects = projects.reduce((acc, project) => {
-    const category = project.client || 'Sans Catégorie'
+    const category = project.category || 'Sans Catégorie'
     if (!acc[category]) acc[category] = []
     acc[category].push(project)
     return acc

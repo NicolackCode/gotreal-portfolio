@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import Link from 'next/link'
+import TransitionLink from '@/components/transition/TransitionLink'
 import HeroVideoBackground from '@/components/ui/HeroVideoBackground'
 
 export const revalidate = 0 
@@ -17,17 +17,27 @@ export default async function HomePage() {
     }
   )
 
-  // On récupère les URLs des projets visibles
+  // On récupère les URLs et priorités des projets visibles
   const { data: projectsData } = await supabase
     .from('projects')
-    .select('main_video_url')
+    .select('main_video_url, priority')
     .eq('is_visible', true)
     .not('main_video_url', 'is', null)
 
   const fallbackList = ['https://storage.googleapis.com/gotreal-assets/demo.mp4']
-  const bgVideosList = projectsData && projectsData.length > 0 
-    ? projectsData.map(p => p.main_video_url) 
-    : fallbackList
+  
+  let bgVideosList = fallbackList
+  if (projectsData && projectsData.length > 0) {
+    // 1. Essayer de récupérer uniquement la crème de la crème (TOP 1)
+    const top1Videos = projectsData.filter(p => p.priority === 'TOP 1').map(p => p.main_video_url)
+    
+    // 2. Si y'a aucun TOP 1, on prend tout ce qui existe pour pas faire crasher
+    if (top1Videos.length > 0) {
+       bgVideosList = top1Videos as string[]
+    } else {
+       bgVideosList = projectsData.map(p => p.main_video_url) as string[]
+    }
+  }
 
   return (
     <main className="relative w-full h-screen overflow-hidden bg-black flex items-center justify-center">
@@ -50,12 +60,12 @@ export default async function HomePage() {
 
       {/* BOUTON CATCHY VERS LA GALERIE */}
       <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
-        <Link 
+        <TransitionLink 
           href="/all-projects" 
           className="text-white font-sans font-bold text-xs uppercase tracking-widest border border-zinc-700 px-8 py-4 hover:bg-white hover:text-black transition-colors"
         >
           Découvrir les Projets
-        </Link>
+        </TransitionLink>
       </div>
     </main>
   )

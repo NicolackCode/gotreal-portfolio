@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import Hls from "hls.js";
 import {
   DndContext,
   closestCenter,
@@ -50,16 +51,14 @@ interface GridEditorProps {
   searchQuery: string;
 }
 
-// Composant interne pour une ligne sortable
+// Composant interne pour une ligne sortable moderne
 function SortableItem({
   project,
-  onSpanChange,
   onEdit,
   onDelete,
   onToggleVisibility,
 }: {
   project: Project;
-  onSpanChange: (id: string, val: string) => void;
   onEdit: (p: Project) => void;
   onDelete: (id: string, title: string) => void;
   onToggleVisibility: (id: string, currentVisible: boolean) => void;
@@ -76,111 +75,124 @@ function SortableItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 10 : 1,
+    zIndex: isDragging ? 50 : 1,
   };
+
+  // Thumbnail Engine
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    let hls: Hls | null = null;
+    if (project.main_video_url && videoRef.current) {
+       const url = project.main_video_url;
+       if (url.includes('.m3u8') && Hls.isSupported()) {
+          hls = new Hls({ autoStartLoad: true, startPosition: 0.1 });
+          hls.loadSource(url);
+          hls.attachMedia(videoRef.current);
+       } else {
+          videoRef.current.src = `${url}#t=0.1`;
+       }
+    }
+    return () => { if (hls) hls.destroy() }
+  }, [project.main_video_url]);
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center justify-between p-4 mb-2 bg-zinc-900 border ${isDragging ? "border-white" : "border-zinc-800"} rounded-md`}
+      className={`group flex items-center justify-between p-3 mb-3 bg-zinc-950/40 hover:bg-zinc-900 border ${isDragging ? "border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.3)]" : "border-zinc-800 hover:border-zinc-700"} rounded-xl transition-all duration-200 overflow-hidden relative`}
     >
-      <div className="flex items-center gap-4 flex-1">
+      <div className="flex items-center gap-5 flex-1 relative z-10">
         {/* Poignée de drag */}
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab text-zinc-500 hover:text-white px-2"
+          className="cursor-grab text-zinc-600 hover:text-white px-2 cursor-grab active:cursor-grabbing text-xl"
         >
-          ☰
+          ⋮⋮
         </div>
-        <div>
+
+        {/* THUMBNAIL VISUEL */}
+        <div className="relative w-24 h-14 bg-zinc-900 rounded-md overflow-hidden flex-shrink-0 shadow-inner group-hover:shadow-[0_0_10px_rgba(0,0,0,0.5)] transition-shadow">
+           {project.main_video_url ? (
+             <video 
+               ref={videoRef} 
+               className="w-full h-full object-cover" 
+               preload="metadata"
+               muted 
+               playsInline 
+             />
+           ) : (
+             <div className="w-full h-full flex items-center justify-center text-[9px] text-zinc-700 uppercase">No Media</div>
+           )}
+           {project.is_visible === false && (
+             <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[1px]">
+                <span className="text-[10px] uppercase font-bold text-zinc-500">Caché</span>
+             </div>
+           )}
+        </div>
+
+        {/* METADATA */}
+        <div className="flex flex-col justify-center gap-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+            <h3 className={`text-sm font-black uppercase tracking-wider ${project.is_visible === false ? 'text-zinc-600 line-through decoration-zinc-800' : 'text-zinc-100 group-hover:text-white transition-colors'}`}>
               {project.title}
             </h3>
             {getPriority(project.priority) === 1 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
+              <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 shadow-[0_0_8px_rgba(250,204,21,0.1)]">
                 TOP 1
               </span>
             )}
             {getPriority(project.priority) === 2 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-500/20 text-green-500 border border-green-500/30">
+              <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
                 TOP 2
               </span>
             )}
             {getPriority(project.priority) === 3 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-500 border border-blue-500/30">
+              <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
                 TOP 3
               </span>
             )}
             {getPriority(project.priority) === 4 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-500 border border-orange-500/30">
+              <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 border border-orange-500/20">
                 RAW
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-xs text-zinc-500 uppercase">{project.client}</p>
-            {project.is_visible === false && (
-              <span className="text-[9px] px-1 border border-zinc-700 bg-zinc-800 text-zinc-400 rounded-sm italic">
-                Caché
-              </span>
-            )}
-          </div>
+          <p className="text-[10px] text-pink-500/70 font-mono uppercase tracking-widest drop-shadow-sm font-bold">
+             {project.client}
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <label className="text-xs text-zinc-400 font-mono">Format :</label>
-        <select
-          value={project.forced_span || ""}
-          onChange={(e) => onSpanChange(project.id, e.target.value)}
-          className="bg-black border border-zinc-700 text-xs text-white p-2 rounded outline-none"
+      {/* BOUTONS ACTIONS MODERNES */}
+      <div className="flex items-center gap-2 relative z-10 opacity-60 group-hover:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => onEdit(project)}
+          className="text-[10px] font-bold text-zinc-300 hover:text-cyan-300 uppercase tracking-widest px-3 py-1.5 bg-zinc-800/50 hover:bg-cyan-900/30 rounded-md transition-colors border border-transparent hover:border-cyan-800/50 backdrop-blur-sm"
         >
-          <option value="">Auto (Aléatoire)</option>
-          <option value="col-span-1 row-span-1">Standard (Carré)</option>
-          <option value="col-span-2 row-span-1">Très Large (Horizontal)</option>
-          <option value="col-span-1 row-span-2">Très Haut (Vertical)</option>
-          <option value="col-span-2 row-span-2">Masstoc (Énorme)</option>
-        </select>
+          Éditer
+        </button>
 
-        {/* BOUTONS ACTIONS */}
-        <div className="flex gap-2 ml-4 pl-4 border-l border-zinc-800">
-          <button
-            type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onEdit(project)}
-            className="text-xs text-zinc-400 hover:text-white uppercase tracking-wider px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded transition-colors"
-          >
-            Éditer
-          </button>
+        <button
+          type="button"
+          title={project.is_visible !== false ? "Cacher" : "Afficher"}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => onToggleVisibility(project.id, project.is_visible !== false)}
+          className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md transition-colors border backdrop-blur-sm ${project.is_visible !== false ? "text-zinc-400 hover:text-zinc-200 bg-zinc-800/50 hover:bg-zinc-700/50 border-transparent hover:border-zinc-600" : "text-zinc-600 bg-black border-zinc-900 hover:text-white hover:border-zinc-700"}`}
+        >
+          {project.is_visible !== false ? "👁️ Hide" : "👁️‍🗨️ Unhide"}
+        </button>
 
-          <button
-            type="button"
-            title={
-              project.is_visible !== false
-                ? "Cacher le projet"
-                : "Rendre visible"
-            }
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() =>
-              onToggleVisibility(project.id, project.is_visible !== false)
-            }
-            className={`text-xs uppercase tracking-wider px-2 py-1 rounded transition-colors ${project.is_visible !== false ? "text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700" : "text-zinc-600 bg-zinc-950 border border-zinc-800 hover:text-white hover:bg-zinc-800"}`}
-          >
-            {project.is_visible !== false ? "👁️" : "👁️‍🗨️"}
-          </button>
-
-          <button
-            type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onDelete(project.id, project.title)}
-            className="text-xs text-red-500 hover:text-red-400 uppercase tracking-wider px-2 py-1 bg-red-950/30 hover:bg-red-900/50 rounded transition-colors"
-          >
-            Supprimer
-          </button>
-        </div>
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => onDelete(project.id, project.title)}
+          className="text-[10px] font-bold text-red-500/80 hover:text-red-400 uppercase tracking-widest px-3 py-1.5 bg-red-950/20 hover:bg-red-900/40 rounded-md transition-colors border border-transparent hover:border-red-900/50 backdrop-blur-sm ml-2"
+        >
+          Delete
+        </button>
       </div>
     </div>
   );
@@ -230,11 +242,7 @@ export default function GridEditor({
     }
   };
 
-  const handleSpanChange = (id: string, newSpan: string) => {
-    setProjects((items) =>
-      items.map((p) => (p.id === id ? { ...p, forced_span: newSpan } : p)),
-    );
-  };
+
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -249,7 +257,7 @@ export default function GridEditor({
           .from("projects")
           .update({
             rank: index + 1,
-            forced_span: p.forced_span || null,
+            // (forced_span supprimé)
           })
           .eq("id", p.id);
 
@@ -343,7 +351,6 @@ export default function GridEditor({
               <SortableItem
                 key={project.id}
                 project={project}
-                onSpanChange={handleSpanChange}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onToggleVisibility={onToggleVisibility}

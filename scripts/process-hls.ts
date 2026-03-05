@@ -170,20 +170,20 @@ async function processVideo(gcpPath: string): Promise<string> {
   await new Promise((resolve, reject) => {
     let lastLogTime = 0;
 
-    const scale1080 = isVertical ? '1080x1920' : '1920x1080';
-    const scale720 = isVertical ? '720x1280' : '1280x720';
-    const scale480 = isVertical ? '484x854' : '854x484'; // FFmpeg needs even numbers
+    const scale1080 = isVertical ? 'scale=-2:1920' : 'scale=1920:-2';
+    const scale720 = isVertical ? 'scale=-2:1280' : 'scale=1280:-2';
+    const scale480 = isVertical ? 'scale=-2:854' : 'scale=854:-2';
 
     ffmpeg(localInputPath)
       .outputOptions([
         '-map 0:v:0', '-map 0:a:0?',
-        `-s:v:0 ${scale1080}`, '-c:v:0 libx264', '-b:v:0 5000k', '-c:a:0 aac', '-b:a:0 128k',
+        '-filter:v:0', `${scale1080}`, '-c:v:0', 'libx264', '-b:v:0', '5000k', '-c:a:0', 'aac', '-b:a:0', '128k',
         
         '-map 0:v:0', '-map 0:a:0?',
-        `-s:v:1 ${scale720}`, '-c:v:1 libx264', '-b:v:1 2500k', '-c:a:1 aac', '-b:a:1 128k',
+        '-filter:v:1', `${scale720}`, '-c:v:1', 'libx264', '-b:v:1', '2500k', '-c:a:1', 'aac', '-b:a:1', '128k',
         
         '-map 0:v:0', '-map 0:a:0?',
-        `-s:v:2 ${scale480}`, '-c:v:2 libx264', '-b:v:2 1000k', '-c:a:2 aac', '-b:a:2 96k',
+        '-filter:v:2', `${scale480}`, '-c:v:2', 'libx264', '-b:v:2', '1000k', '-c:a:2', 'aac', '-b:a:2', '96k',
         
         '-f hls',
         '-hls_time 6',

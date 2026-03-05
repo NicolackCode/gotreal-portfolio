@@ -1,0 +1,2 @@
+﻿src/app/template.tsx(4,22): error TS2307: Cannot find module 'gsap' or its corresponding type declarations.
+src/components/ui/Loader.tsx(4,22): error TS2307: Cannot find module 'gsap' or its corresponding type declarations.

@@ -76,5 +76,9 @@ $RECYCLE.BIN/
 *.suo
 *.ntvs*
 *.njsproj
+
+# Security
+scripts/
+
 *.sln
 *.sw?

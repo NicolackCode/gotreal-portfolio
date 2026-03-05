@@ -1,42 +1,107 @@
 'use client'
 
-import React, { useRef, useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import ProjectCard from './ProjectCard'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useGSAP } from '@gsap/react'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger, useGSAP)
-}
 
 interface Project {
   id: string
   title: string
-  client: string
+  category: string
+  client?: string
   description?: string
   main_video_url?: string
   carousel_urls?: string[]
   rank?: number
   forced_span?: string
-  priority?: string // nouveau tag manuel
+  priority?: string
+  rotation?: number
+  slug?: string
 }
 
 interface MasonryGridProps {
   projects: Project[]
 }
 
+// On n'utilise plus Masonry mais une Grid pure CSS,
+// mais on garde les interfaces et le nom du fichier pour ne pas casser l'import père.
+
 export default function MasonryGrid({ projects }: MasonryGridProps) {
-  const container = useRef<HTMLDivElement>(null)
   const [activeFilter, setActiveFilter] = useState('TOUT')
   const [globalIsMuted, setGlobalIsMuted] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
+  // Auto-healing : Dictionnaire des formats validés par la physique des vidéos.
+  // format: Record<projectId, 'vertical' | 'horizontal'>
+  const [verifiedFormats, setVerifiedFormats] = useState<Record<string, 'vertical' | 'horizontal'>>({})
+
+  const handleFormatLoaded = React.useCallback((id: string, format: 'vertical' | 'horizontal') => {
+     setVerifiedFormats(prev => {
+        // Ne déclencher un re-render que si la valeur change vraiment
+        if (prev[id] === format) return prev;
+        return { ...prev, [id]: format };
+     });
+  }, []);
+
+  React.useEffect(() => {
+    const savedState = localStorage.getItem('gotreal_global_muted')
+    // Par défaut, si l'user a interagi sur la home, on sera à 'false' (son actif)
+    if (savedState === 'false') {
+      setGlobalIsMuted(false)
+    } else if (savedState === 'true') {
+      setGlobalIsMuted(true)
+    } else {
+      // Si on arrive directement ici sans passer par la home (ex: direct url)
+      // on laisse muted par défaut pour éviter un blocage navigateur non maîtrisé.
+      setGlobalIsMuted(true) 
+    }
+    setIsMounted(true)
+  }, [])
+
+  React.useEffect(() => {
+    const handleGlobalInteraction = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // On ignore le bouton de mute (le toggle est géré dans son onClick)
+      if (target.closest('#mute-btn-masonry')) return;
+      
+      // Si on clique sur un lien (ex: projet) ou un autre bouton (ex: filtre)
+      const isButtonOrLink = target.closest('button') || target.closest('a');
+      
+      setGlobalIsMuted(prev => {
+        let nextMuted = !prev; // Par défaut, cliquer dans le vide inverse l'état
+        
+        if (isButtonOrLink) {
+           nextMuted = false; // "les boutons ont juste l'option d'activer"
+        }
+
+        localStorage.setItem('gotreal_global_muted', nextMuted ? 'true' : 'false')
+        return nextMuted;
+      });
+    }
+    
+    document.addEventListener('click', handleGlobalInteraction)
+    document.addEventListener('touchstart', handleGlobalInteraction)
+    
+    return () => {
+      document.removeEventListener('click', handleGlobalInteraction)
+      document.removeEventListener('touchstart', handleGlobalInteraction)
+    }
+  }, [])
+
+  const toggleGlobalMute = () => {
+    const nextState = !globalIsMuted;
+    setGlobalIsMuted(nextState);
+    localStorage.setItem('gotreal_global_muted', nextState ? 'true' : 'false')
+  }
 
   // Extraire les catégories uniques, en isolant le bouton TOUT
+  // BUGFIX (Tempo) : Le champ en base de données qui contient les catégories s'appelle actuellement 'client', 
+  // car nous n'avons pas encore pu passer de script de migration SQL sur le Supabase live de production.
   const categories = useMemo(() => {
     if (!projects) return []
-    const clients = projects.map(p => p.client?.trim().toUpperCase()).filter(Boolean)
-    const uniqueClients = Array.from(new Set(clients))
-    return uniqueClients.sort()
+    const catList = projects.map(p => p.client?.trim().toUpperCase()).filter((c): c is string => Boolean(c))
+    const uniqueCat = Array.from(new Set(catList))
+    return uniqueCat.sort()
   }, [projects])
 
   // Filtrer ET Trier les projets (Priorité: TOP 3 > TOP 2 > TOP 1 > RAW > Reste)
@@ -44,10 +109,10 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
     let result = [...projects]
     
     if (activeFilter !== 'TOUT') {
+      // BUGFIX BDD : Filtrage temporaire sur la colonne 'client'
       result = result.filter(p => p.client?.trim().toUpperCase() === activeFilter)
     }
 
-    // Le tri par tags explicites en BDD
     return result.sort((a, b) => {
       const getScore = (val?: string) => {
         if (!val) return 5
@@ -61,36 +126,10 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
       const pA = getScore(a.priority)
       const pB = getScore(b.priority)
 
-      // Si priorités différentes, on trie (le plus petit chiffre en premier)
       if (pA !== pB) return pA - pB
-      
-      // À priorité égale, on garde le tri BDD d'origine
       return (a.rank || 0) - (b.rank || 0)
     })
   }, [projects, activeFilter])
-  
-  useGSAP(() => {
-    // Si pas de projets, ou si filtré vide, ne rien faire
-    if (!filteredProjects || filteredProjects.length === 0) return
-
-    const cards = gsap.utils.toArray('.masonry-item') as HTMLElement[]
-    
-    // On nettoie les anciens styles si on re-filtre
-    gsap.set(cards, { clearProps: 'all' })
-
-    // Animation classique en cascade sans ScrollTrigger (qui cause des trous au changement de filtre avec les colonnes CSS)
-    gsap.fromTo(cards, 
-      { opacity: 0, scale: 0.95, y: 20 },
-      {
-        opacity: 1, 
-        scale: 1,
-        y: 0,
-        duration: 0.6,
-        stagger: 0.03, // Cascade très rapide style Awwwards
-        ease: 'power2.out',
-      }
-    )
-  }, { scope: container, dependencies: [activeFilter, filteredProjects] })
 
   if (!projects || projects.length === 0) {
     return (
@@ -100,17 +139,23 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
     )
   }
 
+  if (!isMounted) {
+    return (
+      <div className="w-full h-[50vh] flex items-center justify-center">
+        <div className="w-12 h-12 border-2 border-zinc-800 border-t-zinc-400 rounded-full animate-spin opacity-50" />
+      </div>
+    )
+  }
+
   return (
-    <div ref={container} className="w-full max-w-[1800px] mx-auto px-4 py-12">
+    <div className="w-full mx-auto px-4 py-12 md:px-8">
       
       {/* MENU FILTRES CATEGORIES EYECANNDY STYLE */}
       {categories.length > 0 && (
-        <div className="flex flex-col items-center justify-center mb-16 sm:mb-24">
-          
-          {/* TOUT CENTRÉ EN HAUT */}
+        <div className="flex flex-col items-start justify-start mb-8 sm:mb-12">
           <button
             onClick={() => setActiveFilter('TOUT')}
-            className={`text-sm md:text-base font-sans font-black tracking-widest uppercase px-4 py-2 mb-8 ${
+            className={`text-sm md:text-base font-sans font-black tracking-widest uppercase px-4 py-2 mb-8 transition-colors ${
               activeFilter === 'TOUT' 
                 ? 'text-white border-b-2 border-white' 
                 : 'text-zinc-600 hover:text-zinc-300 border-b-2 border-transparent hover:border-zinc-700'
@@ -119,13 +164,12 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
             ALL
           </button>
 
-          {/* AUTRES CATEGORIES CENTREES EN DESSOUS */}
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 max-w-5xl mx-auto">
+          <div className="flex flex-wrap items-start justify-start gap-4 sm:gap-6 w-full">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveFilter(cat)}
-                className={`text-[10px] md:text-sm font-sans font-bold tracking-widest uppercase px-2 py-1 ${
+                className={`text-[10px] md:text-xs font-sans font-bold tracking-widest uppercase px-1 py-1 transition-colors ${
                   activeFilter === cat 
                     ? 'text-white border-b-2 border-white' 
                     : 'text-zinc-600 hover:text-zinc-300 border-b-2 border-transparent hover:border-zinc-700'
@@ -138,44 +182,77 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
         </div>
       )}
 
-      {/* GRILLE BENTO / TETRIS (CSS Grid Dense Packing) */}
+      {/* GRILLE MASONRY (Asymétrique via react-masonry-css + Chaos Contrôlé) */}
       {filteredProjects.length === 0 ? (
         <div className="w-full h-32 flex items-center justify-center text-zinc-500 font-mono tracking-widest uppercase text-xs">
           Aucun projet pour cette catégorie
         </div>
       ) : (
-        /* Dense: Les cellules comblent automatiquement les trous laissés par les gros spans */
-        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 grid-flow-dense auto-rows-[200px] md:auto-rows-[250px] lg:auto-rows-[300px] gap-2 sm:gap-4 w-full">
-          {filteredProjects.map((project, index) => {
-            // L'astuce Bento : Le Grid Parent doit absolument détenir le spanClass !
-            let spanClass = project.forced_span
-            
-            // Si l'admin n'a pas forcé de taille depuis le dashboard, on garde l'aléatoire Tetris
-            if (!spanClass) {
-              const hash = project.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-              const type = hash % 5 
+        // Vraie Grid CSS (Bento Box), le grid-flow-dense fait remonter les petits blocs dans les trous
+        <div className="w-full grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 auto-rows-[120px] md:auto-rows-[180px] xl:auto-rows-[250px] gap-[2px] grid-flow-dense pb-24">
+            {filteredProjects.map((project, index) => {
               
-              spanClass = 'col-span-1 row-span-1 min-h-[200px] min-w-0'
-              if (type === 0) spanClass = 'col-span-2 row-span-1 min-h-[200px] min-w-0' // Rectangle horizontal (16:9 like)
-              else if (type === 1) spanClass = 'col-span-1 row-span-1 min-h-[200px] min-w-0' // Changed from extreme vertical
-              else if (type === 2) spanClass = 'col-span-2 row-span-2 min-h-[400px] min-w-0' // Square (impactful)
-            }
+              const isRotatedVertical = project.rotation === 90 || project.rotation === -90 || project.rotation === 270;
+              // Fallback BDD si la vidéo n'a pas encore répondu (évite un flash énorme)
+              const fallbackIsNativeVert = project.client?.toLowerCase().includes('reel') || project.client?.toLowerCase().includes('tiktok') || project.category?.toLowerCase().includes('reel') || project.category?.toLowerCase().includes('tiktok');
+              const fallbackIsVertical = isRotatedVertical || fallbackIsNativeVert;
 
-            return (
-              <div key={project.id} className={`shadow-2xl h-full w-full overflow-hidden ${spanClass}`}>
-                <ProjectCard project={project} priorityLoad={index < 8} globalIsMuted={globalIsMuted} />
-              </div>
-            )
-          })}
+              // Force de vérité : la mesure physique de la vidéo surpasse la BDD
+              const physicalFormat = verifiedFormats[project.id];
+              const isVertical = physicalFormat ? physicalFormat === 'vertical' : fallbackIsVertical;
+
+              // Attribution chirurgicale des tailles (Spans)
+              // Jouer avec `col-span` (largeur) et `row-span` (hauteur)
+              const getGridSpan = (isVert: boolean, i: number) => {
+                 if (isVert) {
+                    // Les VERTICALES
+                    // Piliers majeurs (1 sur 3 est immense)
+                    if (i % 3 === 0) return "col-span-1 row-span-2 md:col-span-2 md:row-span-3 xl:col-span-2 xl:row-span-2"; 
+                    // Bandes verticales standards
+                    return "col-span-1 row-span-2 md:col-span-1 md:row-span-2 xl:col-span-1 xl:row-span-2";
+                 }
+                 
+                 // Les HORIZONTALES (Cinéma, Classiques)
+                 // Création de blocs beaucoup plus larges et croisés
+                 if (i % 7 === 0) return "col-span-2 row-span-2 md:col-span-4 md:row-span-3 xl:col-span-4 xl:row-span-3"; // HERO BLOC GÉANT
+                 if (i % 5 === 0) return "col-span-2 row-span-1 md:col-span-2 md:row-span-1 xl:col-span-3 xl:row-span-2"; // Grand bloc large
+                 if (i % 4 === 0) return "col-span-2 row-span-2 md:col-span-2 md:row-span-2 xl:col-span-2 xl:row-span-2"; // Bloc carré
+                 if (i % 3 === 0) return "col-span-2 row-span-1 md:col-span-3 md:row-span-2 xl:col-span-3 xl:row-span-1"; // Grosse bande panoramique
+                 
+                 // Bloc horizontal standard
+                 return "col-span-2 row-span-1 md:col-span-2 md:row-span-1 xl:col-span-2 xl:row-span-1";
+              }
+
+              const spanClasses = getGridSpan(isVertical, index);
+
+              return (
+                <motion.div 
+                  key={project.id}
+                  layout="position"
+                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut", delay: (index % 10) * 0.05 }}
+                  className={`relative w-full h-full ${spanClasses}`}
+                >
+                  <ProjectCard 
+                    project={project} 
+                    priorityLoad={index < 8} 
+                    globalIsMuted={globalIsMuted} 
+                    onFormatLoaded={handleFormatLoaded}
+                  />
+                </motion.div>
+              )
+            })}
         </div>
       )}
 
       {/* Bouton global Unmute / Mute (Flottant bottom right) */}
       <button 
-        onClick={() => setGlobalIsMuted(!globalIsMuted)}
+        id="mute-btn-masonry"
+        onClick={toggleGlobalMute}
         className="fixed bottom-6 right-6 z-50 bg-black border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-900 px-4 py-3 font-sans font-bold text-[10px] sm:text-xs uppercase tracking-widest transition-colors shadow-2xl"
       >
-        {globalIsMuted ? '🔇 SOUND OFF' : '🔊 SOUND ON'}
+        {globalIsMuted ? '🔇 SON COUPÉ' : '🔊 SON ACTIF'}
       </button>
     </div>
   )

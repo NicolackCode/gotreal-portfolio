@@ -26,7 +26,18 @@ export default async function AllProjectsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black pt-24 pb-12">
+    <main className="min-h-screen bg-black pt-32 pb-12 selection:bg-pink-500/30">
+      
+      {/* HEADER DE LA GALERIE (EYECANDY STYLE) */}
+      <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 xl:px-12 mb-12">
+        <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[10rem] font-sans font-black text-white uppercase tracking-tighter leading-none mb-4 mix-blend-difference">
+          ARCHIVES
+        </h1>
+        <p className="font-mono text-zinc-500 text-[10px] sm:text-xs uppercase tracking-[0.2em] max-w-lg">
+          A CUREATED SELECTION OF COMMERCIAL, MUSIC VIDEO AND CREATIVE PROJECTS. 
+        </p>
+      </div>
+
       {/* GRILLE DES PROJETS */}
       <div className="relative z-10">
         <MasonryGrid projects={projectsData || []} />
