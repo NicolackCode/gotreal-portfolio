@@ -263,7 +263,7 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
            </button>
            <button 
              onClick={handleSave} 
-             disabled={!hasUnsavedChanges || isSaving}
+             disabled={isSaving}
              className="px-6 py-2 bg-white text-black font-black font-sans text-xs sm:text-sm uppercase tracking-widest hover:bg-gray-200 disabled:bg-zinc-700 disabled:text-zinc-500 transition-colors"
            >
              {isSaving ? 'SAUVEGARDE...' : 'PUBLIER LA GRILLE'}
