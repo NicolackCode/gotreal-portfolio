@@ -213,12 +213,14 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
          />
       </div>
 
-      {/* 1B. Vidéo principale (Marge interne pour ne pas être caché par le Header Kategorix ni le Titre) */}
-      <div className="absolute inset-0 pt-[110px] pb-[110px] flex items-center justify-center pointer-events-none">
+      {/* 1B. Vidéo principale (Cover sur mobile / Contain sur tablette et +) */}
+      {/* On n'utilise plus les marges forcées, mais une div responsive pour cadrer.
+          Sur mobile, la vidéo plonge sous le texte (object-cover ou contain naturel sans marge interne énorme). */}
+      <div className="absolute inset-0 pt-[80px] sm:pt-0 flex items-center justify-center pointer-events-none overflow-hidden">
          <video 
             ref={videoRef}
             poster={project.thumbnail_url || undefined}
-            className="w-full h-full object-contain transform-gpu"
+            className="w-full h-full object-cover md:object-contain transform-gpu"
             playsInline
             muted={isMuted}
             crossOrigin="anonymous"
