@@ -20,6 +20,19 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
   const pathname = usePathname()
   const router = useRouter()
 
+  // TRACKING D'INTERACTION GLOBAL (Pour autoriser le son des Reels)
+  useEffect(() => {
+    const markInteracted = () => {
+      sessionStorage.setItem('gotreal_interacted', 'true')
+    }
+    window.addEventListener('click', markInteracted, { once: true })
+    window.addEventListener('touchstart', markInteracted, { once: true })
+    return () => {
+      window.removeEventListener('click', markInteracted)
+      window.removeEventListener('touchstart', markInteracted)
+    }
+  }, [])
+
   const navigate = (href: string) => {
     // Si on est déjà sur la page, ne rien faire
     if (href === pathname) return 

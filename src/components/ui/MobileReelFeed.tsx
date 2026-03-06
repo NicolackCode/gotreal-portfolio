@@ -17,6 +17,16 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
   const [isGlobalMuted, setIsGlobalMuted] = useState(true);
   const [hasInteracted, setHasInteracted] = useState(false);
 
+  // VÉRIFICATION DE LA SESSION : Si l'utilisateur vient de naviguer sur le site, l'Autoplay Unmuted est autorisé 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('gotreal_interacted') === 'true') {
+      setTimeout(() => {
+        setIsGlobalMuted(false);
+        setHasInteracted(true);
+      }, 0);
+    }
+  }, []);
+
   // GESTION DU MASQUAGE AUTOMATIQUE DU HEADER (Façon TikTok/Insta)
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
