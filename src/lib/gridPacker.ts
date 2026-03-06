@@ -97,35 +97,52 @@ export function autoPackGadgets(projects: GridProject[]) {
            for (let r = 0; !placed; r++) {
                for (let c = 0; c < cols; c++) {
                    if (isFree(r, c, 1, 1)) {
-                       // On a trouvé un trou. On gonfle la largeur autant que possible (jusqu'au mur ou une vidéo).
-                       let maxW = 1;
-                       while (c + maxW < cols && isFree(r, c + maxW, 1, 1)) {
-                           maxW++;
-                       }
-                       // Ensuite, avec cette largeur trouvée, on descend la hauteur au maximum possible !
-                       let maxH = 1;
-                       while (maxH < maxGadgetRows && isFree(r + maxH, c, maxW, 1)) {
-                           maxH++;
+                       // On a trouvé un trou libre (r, c).
+                       // Au lieu de grandir naïvement en largeur puis en hauteur, on va évaluer TOUTES
+                       // les boîtes rectangulaires (w, h) possibles partant de (r, c) et choisir celle
+                       // qui occupe la plus GRANDE SURFACE (w * h) pour garantir le remplissage maximum !
+                       
+                       let bestW = 1;
+                       let bestH = 1;
+                       let maxArea = 0;
+                       
+                       // Quelle est la largeur absolue max avant de taper un mur ou une vidéo ?
+                       let absoluteMaxW = 1;
+                       while (c + absoluteMaxW < cols && isFree(r, c + absoluteMaxW, 1, 1)) {
+                           absoluteMaxW++;
                        }
                        
-                       // Sécurité Admin & Esthétique Générale : 
-                       // Si le gadget a beaucoup de place en largeur (ex: tout en bas de la page),
-                       // on refuse qu'il s'applatisse comme une crêpe. On force sa hauteur à être a minima
-                       // proportionnelle à sa largeur (ex: un bloc carré)
-                       const minAestheticHeight = Math.ceil(maxW * 0.8); 
-                       maxH = Math.max(maxH, minAestheticHeight);
+                       // Pour chaque largeur testée, on trouve sa hauteur max supportée, et on retient l'Aire Max.
+                       for (let testW = 1; testW <= absoluteMaxW; testW++) {
+                           let testH = 1;
+                           while (testH < maxGadgetRows && isFree(r + testH, c, testW, 1)) {
+                               testH++;
+                           }
+                           
+                           const area = testW * testH;
+                           if (area > maxArea) {
+                               maxArea = area;
+                               bestW = testW;
+                               bestH = testH;
+                           }
+                       }
+                       
+                       let finalW = Math.max(2, bestW);
+                       let finalH = Math.max(2, bestH);
 
-                       // Et on garantit la règle d'or d'Interaction (La croix cliquable)
-                       maxW = Math.max(2, maxW);
-                       maxH = Math.max(2, maxH);
+                       // Esthétique : Si on est tout en bas (plus aucune vidéo pour bloquer la hauteur testée),
+                       // on évite qu'il ne s'aplatisse sur quelques lignes en forçant l'esthétisme cubique/vertical.
+                       if (finalH < Math.ceil(finalW * 0.8)) {
+                          finalH = Math.ceil(finalW * 0.8);
+                       }
                        
-                       place(r, c, maxW, maxH);
+                       place(r, c, finalW, finalH);
                        
                        if (!gadgetSpans[p.id]) gadgetSpans[p.id] = { mobile: {w:1,h:1}, md: {w:1,h:1}, xl: {w:1,h:1} };
                        
-                       if (cols === 6) gadgetSpans[p.id].mobile = {w: maxW, h: maxH};
-                       else if (cols === 12) gadgetSpans[p.id].md = {w: maxW, h: maxH};
-                       else gadgetSpans[p.id].xl = {w: maxW, h: maxH};
+                       if (cols === 6) gadgetSpans[p.id].mobile = {w: finalW, h: finalH};
+                       else if (cols === 12) gadgetSpans[p.id].md = {w: finalW, h: finalH};
+                       else gadgetSpans[p.id].xl = {w: finalW, h: finalH};
                        
                        placed = true;
                        break;
