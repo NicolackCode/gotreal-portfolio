@@ -94,27 +94,27 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
     >
       
       {/* HEADER MINIMALISTE & FILTRES CATÉGORIES */}
-      <div className="absolute top-0 left-0 w-full z-50 pointer-events-auto bg-gradient-to-b from-black/80 via-black/30 to-transparent pb-10">
-        <div className="px-4 pt-6 pb-2 flex justify-end items-center mix-blend-difference pointer-events-none">
+      <div className="absolute top-0 left-0 w-full z-40 pointer-events-none bg-gradient-to-b from-black/80 via-black/30 to-transparent pb-10">
+        <div className="px-4 pt-6 pb-2 flex justify-end items-center mix-blend-difference">
           <span className="text-white font-mono text-[10px] tracking-widest opacity-60">
               {activeIndex + 1} / {filteredProjects.length}
           </span>
         </div>
         
         {/* Catégories Scrollables */}
-        <div className="px-4 flex gap-3 overflow-x-auto no-scrollbar items-center mask-image-[linear-gradient(to_right,white_80%,transparent)]">
+        <div className="px-4 flex gap-3 overflow-x-auto no-scrollbar items-center mask-image-[linear-gradient(to_right,white_80%,transparent)] pointer-events-auto">
             {categories.map((cat) => (
-                <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-mono tracking-widest uppercase transition-colors ${
-                        activeCategory === cat 
-                          ? 'bg-white text-black font-bold' 
-                          : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
-                    }`}
-                >
-                    {cat}
-                </button>
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-mono tracking-widest uppercase transition-all ${
+                  activeCategory === cat 
+                    ? 'bg-white text-black font-bold' 
+                    : 'bg-white/20 text-white backdrop-blur hover:bg-white/30'
+                }`}
+              >
+                {cat}
+              </button>
             ))}
         </div>
       </div>
