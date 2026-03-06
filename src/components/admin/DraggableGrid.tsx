@@ -14,6 +14,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStr
 import { SortableProjectCard } from './SortableProjectCard'
 import { updateProjectsGridRank, createGadget, deleteGadget } from '@/app/actions/grid-actions'
 import ProjectForm from '@/components/admin/ProjectForm'
+import { autoPackGadgets, GridProject } from '@/lib/gridPacker'
 
 export interface Project {
   id: string
@@ -41,6 +42,11 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
   // NOUVEAU : État du Filtre Catégorie
   const [activeFilter, setActiveFilter] = useState('TOUT')
   
+  // AUTOPACK (Liquid Fill pour les Gadgets)
+  const autoPackedSpans = React.useMemo(() => {
+     return autoPackGadgets(items as GridProject[]);
+  }, [items]);
+
   // Historique pour l'Undo/Redo
   const [history, setHistory] = useState<Project[][]>([initialProjects])
   const [historyIndex, setHistoryIndex] = useState(0)
@@ -286,6 +292,7 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
                   project={project} 
                   index={index} // l'index est primordial pour que la carte calcule sa propre taille Bento
                   isActive={matchesFilter} // Filtre d'opacité
+                  autoPackedSpan={project.category === 'GADGET' ? autoPackedSpans[project.id] : undefined}
                   onEdit={(p) => {
                     setCurrentEditProject(p as Project)
                     setIsFormOpen(true)

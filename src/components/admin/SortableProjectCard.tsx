@@ -24,6 +24,7 @@ interface SortableProjectCardProps {
   onEdit?: (project: any) => void
   onResize?: (id: string, newSpan: string, isFinal: boolean) => void
   onDeleteGadget?: (id: string) => void
+  autoPackedSpan?: string // Span injecté dynamiquement par le Liquid Fill algorithmique
 }
 
 const getGridSpanAdmin = (isVert: boolean) => {
@@ -55,7 +56,7 @@ const parseSpanStyles = (spanString: string): React.CSSProperties => {
   return vars as React.CSSProperties;
 }
 
-export function SortableProjectCard({ id, project, isActive = true, onEdit, onResize, onDeleteGadget }: SortableProjectCardProps) {
+export function SortableProjectCard({ id, project, isActive = true, onEdit, onResize, onDeleteGadget, autoPackedSpan }: SortableProjectCardProps) {
   const {
     attributes,
     listeners,
@@ -117,8 +118,8 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
 
   const isVertical = naturalVertical !== null ? naturalVertical : fallbackIsVertical;
 
-  // Si forced_span existe en base, on force cette taille, sinon calcul naturel
-  const spanClasses = project.forced_span || getGridSpanAdmin(isVertical);
+  // Priorité absolue au Span généré par le Bin Packing dynamique pour les Gadgets, sinon forced_span BDD, sinon naturel.
+  const spanClasses = autoPackedSpan || project.forced_span || getGridSpanAdmin(isVertical);
   
   // NOUVEAU: Logique de redimensionnement de la carte (Handle) AVEC RATIO VERROUILLÉ ET COMPENSATION
   const [isResizing, setIsResizing] = useState(false);
@@ -278,8 +279,8 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
             </div>
             
             {/* Bottom bar */}
-            <div className="text-[6px] font-mono text-zinc-600 uppercase">
-               [ DRAG & RESIZE TO FILL GAPS ]
+            <div className="absolute font-mono text-zinc-600 uppercase bottom-2 left-1/2 -translate-x-1/2 min-w-max border border-zinc-800 bg-black/50 backdrop-blur rounded px-2 text-[6px]">
+               [ LIQUID FILL ACTIVÉ - NE PAS REDIMENSIONNER ]
             </div>
          </div>
       ) : (
@@ -325,8 +326,8 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
         </button>
       )}
 
-      {/* POIGNÉES DE REDIMENSIONNEMENT (BOTTOM-RIGHT SEULEMENT POUR FIABILITÉ) */}
-      {onResize && (
+      {/* POIGNÉES DE REDIMENSIONNEMENT (BOTTOM-RIGHT SEULEMENT, DÉSACTIVÉ POUR LES GADGETS LIQUIDES) */}
+      {onResize && project.category !== 'GADGET' && (
         <>
           {/* Bottom Right */}
           <div 

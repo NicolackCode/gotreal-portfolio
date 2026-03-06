@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import ProjectCard from './ProjectCard'
+import { autoPackGadgets, GridProject } from '@/lib/gridPacker'
 
 interface Project {
   id: string
@@ -154,6 +155,13 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
     )
   }, [projects, activeFilter])
 
+  // ==========================================
+  // AUTOPACK: Simulation des trous de la grille !
+  // ==========================================
+  const autoPackedSpans = useMemo(() => {
+     return autoPackGadgets(filteredProjects as GridProject[]);
+  }, [filteredProjects]);
+
   if (!projects || projects.length === 0) {
     return (
       <div className="w-full h-64 flex items-center justify-center text-zinc-500 font-mono tracking-widest uppercase">
@@ -239,7 +247,9 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
               }
 
               // Le spanClasses définit à la fois la largeur ET la hauteur absolue dans la trame
-              const spanClasses = project.forced_span || getGridSpan(isVertical);
+              const spanClasses = project.category === 'GADGET' 
+                  ? (autoPackedSpans[project.id] || getGridSpan(isVertical)) 
+                  : (project.forced_span || getGridSpan(isVertical));
 
               if (project.category === 'GADGET') {
                  // DESIGN GADGET (LIVING AMBIENT CANVAS)
