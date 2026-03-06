@@ -61,6 +61,24 @@ export default function ProjectCard({
         startLevel: 0 
       })
       hlsRef.current = hls
+      
+      hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+        // Limitation à 1080p maximum
+        let bestLevel = -1;
+        let maxRes = 0;
+        data.levels.forEach((level, index) => {
+          const res = Math.max(level.width, level.height);
+          // On cherche la meilleure résolution, mais qui ne dépasse pas 1920 (pour du 1920x1080 ou 1080x1920)
+          if (res <= 1920 && res > maxRes) {
+            maxRes = res;
+            bestLevel = index;
+          }
+        });
+        if (bestLevel !== -1) {
+          hls.autoLevelCapping = bestLevel;
+        }
+      });
+
       hls.loadSource(project.main_video_url)
       hls.attachMedia(video)
     } else {

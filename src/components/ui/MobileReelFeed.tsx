@@ -125,17 +125,23 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
          </div>
       )}
 
-      {filteredProjects.map((project, index) => (
-        <div key={project.id} className="reel-slide w-full h-[100dvh] flex-shrink-0" data-index={index}>
-            <ReelItem 
-                project={project} 
-                isActive={activeIndex === index}
-                isMuted={isGlobalMuted}
-                toggleMute={toggleGlobalMute}
-                onInteract={handleAnyInteraction}
-            />
-        </div>
-      ))}
+      {filteredProjects.map((project, index) => {
+        // Préchargement de la vidéo précédente et suivante pour éviter le flash noir
+        const isAdjacent = Math.abs(activeIndex - index) <= 1;
+
+        return (
+          <div key={project.id} className="reel-slide w-full h-[100dvh] flex-shrink-0" data-index={index}>
+              <ReelItem 
+                  project={project} 
+                  isActive={activeIndex === index}
+                  isAdjacent={isAdjacent}
+                  isMuted={isGlobalMuted}
+                  toggleMute={toggleGlobalMute}
+                  onInteract={handleAnyInteraction}
+              />
+          </div>
+        )
+      })}
     </div>
   );
 }

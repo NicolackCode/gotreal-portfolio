@@ -1,19 +1,71 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
+import Hls from 'hls.js';
 import { Database } from '@/types/supabase';
 
 interface ReelItemProps {
   project: Database['public']['Tables']['projects']['Row'];
   isActive: boolean;
+  isAdjacent?: boolean;
   isMuted: boolean;
   toggleMute: () => void;
   onInteract: () => void;
 }
 
-export default function ReelItem({ project, isActive, isMuted, toggleMute, onInteract }: ReelItemProps) {
+export default function ReelItem({ project, isActive, isAdjacent = false, isMuted, toggleMute, onInteract }: ReelItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
+
+  // Initialisation HLS Conditionnelle pour économiser la RAM
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isActive || isAdjacent) {
+      if (project.main_video_url?.includes('.m3u8') && Hls.isSupported()) {
+        if (!hlsRef.current) {
+          const hls = new Hls({ capLevelToPlayerSize: false, startLevel: 0 });
+          hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+            let bestLevel = -1;
+            let maxRes = 0;
+            data.levels.forEach((level, index) => {
+              const res = Math.max(level.width, level.height);
+              if (res <= 1920 && res > maxRes) {
+                maxRes = res;
+                bestLevel = index;
+              }
+            });
+            if (bestLevel !== -1) hls.autoLevelCapping = bestLevel;
+          });
+          hls.loadSource(project.main_video_url);
+          hls.attachMedia(video);
+          hlsRef.current = hls;
+        }
+      } else {
+        // Fallback pour iOS Safari (Native HLS) ou MP4
+        if (project.main_video_url?.includes('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
+          if (video.src !== project.main_video_url) video.src = project.main_video_url;
+        } else {
+          if (video.src !== project.video_url) video.src = project.video_url || "";
+        }
+      }
+    } else {
+      // Destruction de l'instance si la vidéo sort du scope adjacent
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    }
+  }, [isActive, isAdjacent, project.main_video_url, project.video_url]);
 
   // Gérer la lecture / pause en fonction du scroll (isActive)
   useEffect(() => {
@@ -88,13 +140,12 @@ export default function ReelItem({ project, isActive, isMuted, toggleMute, onInt
       <div className="absolute inset-0 flex items-center justify-center">
          <video 
             ref={videoRef}
-            src={project.video_url || undefined}
             poster={project.thumbnail_url || undefined}
             className="w-full h-full object-contain pointer-events-none transform-gpu"
             loop
             playsInline
             crossOrigin="anonymous"
-            preload={isActive ? "auto" : "none"} // Ultra opti !
+            preload={isActive || isAdjacent ? "auto" : "none"} // Auto-charge l'immédiatement précédent/suivant
          />
       </div>
 
