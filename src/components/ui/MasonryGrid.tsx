@@ -43,6 +43,23 @@ const parseSpanStyles = (spanString: string): React.CSSProperties => {
   return vars as React.CSSProperties;
 }
 
+// === SAFELIST TAILWIND (Empêche PurgeCSS de supprimer les classes responsives dynamiques) ===
+// 'col-span-1' 'row-span-1' 'md:col-span-1' 'md:row-span-1' 'xl:col-span-1' 'xl:row-span-1'
+// 'col-span-2' 'row-span-2' 'md:col-span-2' 'md:row-span-2' 'xl:col-span-2' 'xl:row-span-2'
+// 'col-span-3' 'row-span-3' 'md:col-span-3' 'md:row-span-3' 'xl:col-span-3' 'xl:row-span-3'
+// 'col-span-4' 'row-span-4' 'md:col-span-4' 'md:row-span-4' 'xl:col-span-4' 'xl:row-span-4'
+// 'col-span-5' 'row-span-5' 'md:col-span-5' 'md:row-span-5' 'xl:col-span-5' 'xl:row-span-5'
+// 'col-span-6' 'row-span-6' 'md:col-span-6' 'md:row-span-6' 'xl:col-span-6' 'xl:row-span-6'
+// 'col-span-8' 'row-span-8' 'md:col-span-8' 'md:row-span-8' 'xl:col-span-8' 'xl:row-span-8'
+// 'col-span-10' 'row-span-10' 'md:col-span-10' 'md:row-span-10' 'xl:col-span-10' 'xl:row-span-10'
+// 'col-span-12' 'row-span-12' 'md:col-span-12' 'md:row-span-12' 'xl:col-span-12' 'xl:row-span-12'
+// 'col-span-14' 'row-span-14' 'md:col-span-14' 'md:row-span-14' 'xl:col-span-14' 'xl:row-span-14'
+// 'col-span-16' 'row-span-16' 'md:col-span-16' 'md:row-span-16' 'xl:col-span-16' 'xl:row-span-16'
+// 'col-span-18' 'row-span-18' 'md:col-span-18' 'md:row-span-18' 'xl:col-span-18' 'xl:row-span-18'
+// 'col-span-20' 'row-span-20' 'md:col-span-20' 'md:row-span-20' 'xl:col-span-20' 'xl:row-span-20'
+// 'col-span-22' 'row-span-22' 'md:col-span-22' 'md:row-span-22' 'xl:col-span-22' 'xl:row-span-22'
+// 'col-span-24' 'row-span-24' 'md:col-span-24' 'md:row-span-24' 'xl:col-span-24' 'xl:row-span-24'
+
 // On n'utilise plus Masonry mais une Grid pure CSS,
 // mais on garde les interfaces et le nom du fichier pour ne pas casser l'import père.
 
@@ -114,25 +131,27 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
     localStorage.setItem('gotreal_global_muted', nextState ? 'true' : 'false')
   }
 
-  // Extraire les catégories uniques, en isolant le bouton TOUT
-  // BUGFIX (Tempo) : Le champ en base de données qui contient les catégories s'appelle actuellement 'client', 
-  // car nous n'avons pas encore pu passer de script de migration SQL sur le Supabase live de production.
+  // Extraire les catégories uniques, en excluant les GADGETS du menu cliquable
   const categories = useMemo(() => {
     if (!projects) return []
-    const catList = projects.map(p => (p.category || p.client)?.trim().toUpperCase()).filter((c): c is string => Boolean(c))
+    const catList = projects
+       .filter(p => p.category !== 'GADGET') // Ne crée pas de bouton "GADGET"
+       .map(p => (p.category || p.client)?.trim().toUpperCase())
+       .filter((c): c is string => Boolean(c))
     const uniqueCat = Array.from(new Set(catList))
     return uniqueCat.sort()
   }, [projects])
 
-  // Filtrer les projets
+  // Filtrer les projets : Les GADGETS sont TOUJOURS présents pour boucher les trous, peu importe la catégorie sélectionnée !
   const filteredProjects = useMemo(() => {
-    let result = [...projects]
-    
-    if (activeFilter !== 'TOUT') {
-      result = result.filter(p => (p.category || p.client)?.trim().toUpperCase() === activeFilter)
+    if (activeFilter === 'TOUT') {
+       return [...projects];
     }
-
-    return result
+    
+    return projects.filter(p => 
+      p.category === 'GADGET' || // Toujours inclure la colle
+      (p.category || p.client)?.trim().toUpperCase() === activeFilter
+    )
   }, [projects, activeFilter])
 
   if (!projects || projects.length === 0) {
@@ -192,8 +211,8 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
           Aucun projet pour cette catégorie
         </div>
       ) : (
-        // Grille très fine (24 colonnes) pour un contrôle maximal. Mode manuel (sans auto-placement dense).
-        <div className="w-full grid grid-cols-6 md:grid-cols-12 xl:grid-cols-24 gap-[4px] auto-rows-[20px] pb-24">
+        // Grille très fine (24 colonnes) pour un contrôle maximal. grid-flow-dense pour boucher les trous
+        <div className="w-full grid grid-cols-6 md:grid-cols-12 xl:grid-cols-24 gap-[4px] auto-rows-[20px] grid-flow-dense pb-24">
             {filteredProjects.map((project, index) => {
               
               const isRotatedVertical = project.rotation === 90 || project.rotation === -90 || project.rotation === 270;
@@ -222,6 +241,92 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
               // Le spanClasses définit à la fois la largeur ET la hauteur absolue dans la trame
               const spanClasses = project.forced_span || getGridSpan(isVertical);
 
+              if (project.category === 'GADGET') {
+                 // DESIGN GADGET (LIVING AMBIENT CANVAS)
+                 // Couleurs harmonieuses qui évoquent des reflets d'écran
+                 const colorPair = [
+                   ["bg-pink-500", "bg-purple-600"],
+                   ["bg-cyan-400", "bg-blue-600"],
+                   ["bg-orange-500", "bg-red-600"],
+                   ["bg-emerald-400", "bg-teal-600"],
+                   ["bg-fuchsia-500", "bg-rose-500"]
+                 ][index % 5];
+                 
+                 // L'animation "pulse/spin" s'emballe si le son de la page est activé (battement simulé)
+                 const animSpeed = globalIsMuted ? 10 : 2;
+                 
+                 return (
+                    <motion.div
+                      key={project.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 1, delay: (index % 10) * 0.05 }}
+                      style={parseSpanStyles(spanClasses)}
+                      className="project-card-span relative w-full h-full bg-zinc-950 border border-white/5 overflow-hidden group rounded-2xl"
+                    >
+                       {/* Blob Radiant 1 */}
+                       <motion.div 
+                         className={`absolute -top-[20%] -left-[20%] w-[140%] h-[140%] rounded-full mix-blend-screen filter blur-[40px] md:blur-[80px] opacity-30 ${colorPair[0]} pointer-events-none`}
+                         animate={{
+                            x: ["0%", "20%", "-10%", "0%"],
+                            y: ["0%", "30%", "10%", "0%"],
+                            scale: [1, 1.2, 0.9, 1],
+                            opacity: globalIsMuted ? [0.2, 0.4, 0.2] : [0.4, 0.9, 0.4]
+                         }}
+                         transition={{ duration: animSpeed * 1.5, repeat: Infinity, ease: "easeInOut" }}
+                       />
+                       
+                       {/* Blob Radiant 2 */}
+                       <motion.div 
+                         className={`absolute -bottom-[20%] -right-[20%] w-[140%] h-[140%] rounded-full mix-blend-screen filter blur-[40px] md:blur-[80px] opacity-30 ${colorPair[1]} pointer-events-none`}
+                         animate={{
+                            x: ["0%", "-30%", "20%", "0%"],
+                            y: ["0%", "-20%", "-10%", "0%"],
+                            scale: [1, 1.4, 0.8, 1],
+                            opacity: globalIsMuted ? [0.1, 0.3, 0.1] : [0.2, 0.7, 0.2]
+                         }}
+                         transition={{ duration: animSpeed * 1.2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                       />
+
+                       {/* Astrolabe Géométrique Central Tournant */}
+                       <div className="absolute inset-0 flex items-center justify-center opacity-30 group-hover:opacity-60 transition-opacity mix-blend-plus-lighter pointer-events-none">
+                           <motion.div 
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: animSpeed * 3, repeat: Infinity, ease: "linear" }}
+                              className="w-2/3 h-2/3 max-w-[120px] max-h-[120px] border-[0.5px] border-white/30 rounded-full flex items-center justify-center p-2"
+                           >
+                               <motion.div 
+                                  animate={{ rotate: -360 }}
+                                  transition={{ duration: animSpeed * 1.5, repeat: Infinity, ease: "linear" }}
+                                  className="w-full h-full border-t border-b border-white/50 rounded-full flex items-center justify-center"
+                               >
+                                    <div className="w-1/2 h-1/2 border-[0.5px] border-white/20 rounded-full" />
+                               </motion.div>
+                           </motion.div>
+                       </div>
+                       
+                       {/* Données HUD d'Habillage (Tech Vibe) */}
+                       <div className="absolute top-3 left-3 flex justify-between items-start right-3 pointer-events-none z-10 mix-blend-screen">
+                           <div className="text-[8px] font-mono text-white/70 uppercase tracking-widest whitespace-nowrap">
+                               NODE.{project.title.split('_')[1] || `0${index}`}
+                           </div>
+                           <motion.div 
+                               animate={{ opacity: globalIsMuted ? [0.2, 0.5, 0.2] : [0.6, 1, 0.6] }}
+                               transition={{ duration: globalIsMuted ? 2 : 0.6, repeat: Infinity, ease: "easeInOut" }}
+                               className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                           />
+                       </div>
+
+                       {/* Glass / Noise de surface */}
+                       <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] pointer-events-none" />
+                       
+                       {/* Interaction Bordure au Hover */}
+                       <div className="absolute inset-0 border-2 border-transparent group-hover:border-white/10 rounded-2xl transition-colors duration-500 pointer-events-none z-20" />
+                    </motion.div>
+                 );
+              }
+
+              // PROJET CLASSIQUE
               return (
                 <motion.div 
                   key={project.id}
@@ -230,7 +335,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: "easeOut", delay: (index % 10) * 0.05 }}
                   style={parseSpanStyles(spanClasses)}
-                  className={`project-card-span relative w-full h-full overflow-hidden ring-1 ring-white/10`}
+                  className={`project-card-span relative w-full h-full overflow-hidden`}
                 >
                   <ProjectCard 
                     project={project} 
@@ -241,35 +346,6 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
                   />
                 </motion.div>
               )
-            })}
-
-            {/* FILLERS / GADGETS DÉCORATIFS */}
-            {/* Ces blocs vont automatiquement boucher les trous "impossibles" de la grille CSS dense */}
-            {Array.from({ length: 12 }).map((_, i) => {
-               // Génération de tailles de fillers petites pour se faufiler
-               const fillerCols = [2, 3, 4][i % 3]; // 2, 3 ou 4 colonnes max
-               const fillerRows = [4, 6, 8][i % 3]; // petites hauteurs
-               const spanClasses = `col-span-${fillerCols} row-span-${fillerRows}`;
-
-               return (
-                  <motion.div
-                    key={`filler-${i}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.3 }}
-                    transition={{ duration: 1, delay: 1 + (i * 0.1) }}
-                    style={parseSpanStyles(spanClasses)}
-                    className={`project-card-span relative w-full h-full bg-zinc-900/30 flex justify-center items-center overflow-hidden mix-blend-screen group`}
-                  >
-                     {/* Petite décoration "tech" */}
-                     <div className="text-[8px] font-mono text-zinc-700 uppercase tracking-widest opacity-50 group-hover:opacity-100 transition-opacity">
-                        [ {i % 2 === 0 ? 'VOID' : 'NULL'} ]
-                     </div>
-                     <div className="absolute top-1 left-1 w-1 h-1 bg-zinc-800 rounded-full" />
-                     <div className="absolute top-1 right-1 w-1 h-1 bg-zinc-800 rounded-full" />
-                     <div className="absolute bottom-1 right-1 w-1 h-1 bg-zinc-800 rounded-full" />
-                     <div className="absolute bottom-1 left-1 w-1 h-1 bg-zinc-800 rounded-full" />
-                  </motion.div>
-               )
             })}
         </div>
       )}

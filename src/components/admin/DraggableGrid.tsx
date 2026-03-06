@@ -10,14 +10,9 @@ import {
   useSensors,
   DragEndEvent
 } from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy
-} from '@dnd-kit/sortable'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable'
 import { SortableProjectCard } from './SortableProjectCard'
-import { updateProjectsGridRank } from '@/app/actions/grid-actions'
+import { updateProjectsGridRank, createGadget, deleteGadget } from '@/app/actions/grid-actions'
 import ProjectForm from '@/components/admin/ProjectForm'
 
 export interface Project {
@@ -34,8 +29,8 @@ export interface Project {
 
 // Reproduction de la grille de la home
 const GridContainer = ({ children }: { children: React.ReactNode }) => (
-  // Grille super fine (24 colonnes) pour un contrôle maximal. Mode manuel (sans auto-placement dense).
-  <div className="w-full grid grid-cols-6 md:grid-cols-12 xl:grid-cols-24 gap-[4px] auto-rows-[20px] pb-24">
+  // Grille super fine (24 colonnes) pour un contrôle maximal. grid-flow-dense pour boucher les trous
+  <div className="w-full grid grid-cols-6 md:grid-cols-12 xl:grid-cols-24 gap-[4px] auto-rows-[20px] grid-flow-dense pb-24">
     {children}
   </div>
 )
@@ -57,6 +52,9 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
   // Édition
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [currentEditProject, setCurrentEditProject] = useState<Project | null>(null)
+  
+  // Gadget
+  const [isCreatingGadget, setIsCreatingGadget] = useState(false)
 
   // Configuration DndKit Sensors
   const sensors = useSensors(
@@ -141,6 +139,27 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
     }
     
     setIsSaving(false)
+  }
+
+  const handleAddGadget = async () => {
+     setIsCreatingGadget(true)
+     setSaveStatus('Création du gadget système...')
+     
+     const res = await createGadget()
+     if (res.success && res.project) {
+        setSaveStatus('✅ Gadget ajouté ! Il est tout en bas.')
+        // On ajoute le bloc à la fin du state local
+        const newItems = [...items, res.project]
+        setItems(newItems)
+        const nextHistory = history.slice(0, historyIndex + 1)
+        nextHistory.push(newItems)
+        setHistory(nextHistory)
+        setHistoryIndex(nextHistory.length - 1)
+     } else {
+        setSaveStatus(`❌ Erreur: ${res.error}`)
+     }
+     
+     setIsCreatingGadget(false)
   }
 
   // Support Clavier Ctrl+Z / Ctrl+Y
@@ -229,6 +248,14 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
               </span>
            )}
            <button 
+             onClick={handleAddGadget} 
+             disabled={isCreatingGadget}
+             className="px-4 py-2 border border-blue-500/50 text-blue-400 hover:bg-blue-900/30 hover:text-blue-300 font-mono text-xs uppercase transition-colors disabled:opacity-50"
+             title="Ajouter un bloc fictif pour boucher un trou"
+           >
+             {isCreatingGadget ? 'MOLDING...' : '+ AJOUTER GADGET'}
+           </button>
+           <button 
              onClick={handleSave} 
              disabled={!hasUnsavedChanges || isSaving}
              className="px-6 py-2 bg-white text-black font-black font-sans text-xs sm:text-sm uppercase tracking-widest hover:bg-gray-200 disabled:bg-zinc-700 disabled:text-zinc-500 transition-colors"
@@ -278,6 +305,27 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
                       return newItems
                     })
                     setSaveStatus(null)
+                  }}
+                  onDeleteGadget={async (idToDelete) => {
+                     if (!window.confirm("Supprimer ce gadget vide ?")) return;
+                     
+                     // Construit le nouvel array sans le gadget à supprimer (Optimistic UI)
+                     const newItems = items.filter(p => p.id !== idToDelete);
+                     setItems(newItems);
+                     
+                     setSaveStatus('Suppression côté serveur...');
+                     const res = await deleteGadget(idToDelete);
+                     
+                     if (res.success) {
+                        setSaveStatus('✅ Gadget supprimé avec succès.');
+                        // Enregistrement dans l'historique Ctrl+Z
+                        const nextHistory = history.slice(0, historyIndex + 1);
+                        nextHistory.push(newItems);
+                        setHistory(nextHistory);
+                        setHistoryIndex(nextHistory.length - 1);
+                     } else {
+                        setSaveStatus(`❌ Erreur lors de la suppression: ${res.error}`);
+                     }
                   }}
                 />
               )

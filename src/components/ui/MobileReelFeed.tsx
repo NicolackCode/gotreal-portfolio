@@ -64,17 +64,21 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
   // GESTION DES CATÉGORIES
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
   
-  // Extraire les catégories uniques existantes
+  // Extraire les catégories uniques existantes (sans les Gadgets qui ne servent à rien sur mobile)
   const categories = useMemo(() => {
-    const cats = projects.map(p => p.category).filter(Boolean) as string[];
+    const cats = projects
+        .filter(p => p.category !== 'GADGET')
+        .map(p => p.category)
+        .filter(Boolean) as string[];
     const uniqueCats = Array.from(new Set(cats));
     return ['ALL', ...uniqueCats];
   }, [projects]);
 
-  // Filtrer les projets actifs
+  // Filtrer les projets actifs (on exclut 100% des Gadgets sur l'IHM mobile)
   const filteredProjects = useMemo(() => {
-    if (activeCategory === 'ALL') return projects;
-    return projects.filter(p => p.category === activeCategory);
+    const baseProjects = projects.filter(p => p.category !== 'GADGET');
+    if (activeCategory === 'ALL') return baseProjects;
+    return baseProjects.filter(p => p.category === activeCategory);
   }, [projects, activeCategory]);
 
   // Fonction d'observation (Intersection Observer) : Savoir quelle vidéo est à l'écran
