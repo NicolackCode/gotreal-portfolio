@@ -17,34 +17,19 @@ export default async function HomePage() {
     }
   )
 
-  // On récupère les URLs et priorités des projets visibles
+  // On récupère uniquement les URL des projets mis en évidence ("À la Une")
   const { data: projectsData } = await supabase
     .from('projects')
-    .select('main_video_url, priority')
+    .select('main_video_url')
     .eq('is_visible', true)
+    .eq('is_featured', true)
     .not('main_video_url', 'is', null)
 
   const fallbackList = ['https://storage.googleapis.com/gotreal-assets/demo.mp4']
   
   let bgVideosList: string[] = fallbackList
   if (projectsData && projectsData.length > 0) {
-    // 1. Essayer de récupérer la crème de la crème (TOP 1 et TOP 2)
-    const premiumVideos = projectsData
-       .filter(p => p.priority === 'TOP 1' || p.priority === 'TOP 2')
-       .map(p => p.main_video_url as string)
-    
-    // 2. Si on a trouvé des projets premium, on les utilise
-    if (premiumVideos.length > 0) {
-       bgVideosList = premiumVideos
-    } else {
-       // Sinon fallback global
-       bgVideosList = projectsData.map(p => p.main_video_url as string)
-    }
-
-    // Prank absolu : on force la vidéo donnée en Top 1 direct
-    const trollUrl = "https://storage.googleapis.com/gotreal-assets/videos/1772748044926_360110ff-482e-42e0-83ca-a4f01f225282.mp4"
-    bgVideosList = bgVideosList.filter(url => url !== trollUrl)
-    bgVideosList.unshift(trollUrl)
+    bgVideosList = projectsData.map(p => p.main_video_url as string)
   }
 
   return (

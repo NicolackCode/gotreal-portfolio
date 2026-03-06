@@ -909,7 +909,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
                     {qualities.length > 0 && currentQuality !== -1 && (
                        <span className="absolute -top-2 -right-3 text-[9px] bg-cyan-500/80 text-white px-1 rounded-sm font-sans leading-tight backdrop-blur-sm pointer-events-none">
                           {(() => {
-                            const h = qualities[currentQuality]?.height;
+                            const h = qualities[currentQuality]?.height || nativeHeight || 0;
                             if (!h) return '';
                             if (h >= 2160) return "4K";
                             if (h >= 1440) return "1440p";
@@ -943,7 +943,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
                       // slice().reverse() to show highest resolution at the top (e.g. 1080p -> 720p -> 480p)
                       // Keep original index for currentLevel setter
                       qualities.map((level, i) => ({ level, originalIndex: i })).reverse().map(({ level, originalIndex }) => {
-                        const h = level.height;
+                        const h = level.height || nativeHeight || 0;
                         const label = h >= 2160 ? "4K" : h >= 1440 ? "1440p" : `${h}p`;
                         return (
                            <button

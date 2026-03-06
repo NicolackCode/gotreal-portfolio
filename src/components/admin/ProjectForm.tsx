@@ -17,6 +17,7 @@ type ProjectData = {
   slug?: string
   rotation?: number
   thumbnail_url?: string
+  is_featured?: boolean
 }
 
 type ProjectFormProps = {
@@ -49,6 +50,7 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
   const [rank, setRank] = useState(project?.rank || 0)
   const [priority, setPriority] = useState(project?.priority || '')
   const [rotation, setRotation] = useState(project?.rotation || 0)
+  const [isFeatured, setIsFeatured] = useState<boolean>(project?.is_featured || false)
   
   // States des vidéos
   const [mainVideoUrl, setMainVideoUrl] = useState<string>(project?.main_video_url || '')
@@ -268,13 +270,16 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
         thumbnail_url: thumbnailUrl,
         main_video_url: mainVideoUrl,
         video_url: mainVideoUrl, // Patcher la contrainte NOT NULL de l'ancienne DB
-        carousel_urls: JSON.stringify(carouselUrls) // Stocker en string si la colonne est type Text
+        carousel_urls: JSON.stringify(carouselUrls), // Stocker en string si la colonne est type Text
+        is_featured: isFeatured
       }
 
       if (project?.id) {
-        await supabase.from('projects').update(projectData).eq('id', project.id)
+        const { error } = await supabase.from('projects').update(projectData).eq('id', project.id)
+        if (error) throw new Error(`Supabase Update Error: ${error.message}`)
       } else {
-        await supabase.from('projects').insert([projectData])
+        const { error } = await supabase.from('projects').insert([projectData])
+        if (error) throw new Error(`Supabase Insert Error: ${error.message}`)
       }
 
       onSuccess()
@@ -306,16 +311,35 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
         </div>
 
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs uppercase text-zinc-500 mb-1">Titre</label>
-              <input 
-                type="text" 
-                required
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg focus:border-cyan-500 focus:bg-zinc-800/50 transition-colors outline-none text-sm placeholder:text-zinc-600 shadow-inner" 
-                placeholder="Ex: Titre du clip..."
-              />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <label className="block text-xs uppercase text-zinc-500 mb-1">Titre</label>
+                <input 
+                  type="text" 
+                  required
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg focus:border-cyan-500 focus:bg-zinc-800/50 transition-colors outline-none text-sm placeholder:text-zinc-600 shadow-inner" 
+                  placeholder="Ex: Titre du clip..."
+                />
+              </div>
+
+              {/* Toggle IsFeatured */}
+              <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 p-3 rounded-lg sm:mt-5 self-start">
+                <div className="flex flex-col">
+                  <span className="text-xs uppercase font-bold text-zinc-300">À la Une</span>
+                  <span className="text-[10px] text-zinc-500">Vidéo de fond d&apos;accueil</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsFeatured(!isFeatured)}
+                  className={`w-11 h-6 rounded-full relative transition-colors duration-300 focus:outline-none ${isFeatured ? 'bg-cyan-500' : 'bg-zinc-700'}`}
+                >
+                  <span 
+                    className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${isFeatured ? 'transform translate-x-5' : ''}`}
+                  />
+                </button>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -368,11 +392,11 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
                   onChange={e => setPriority(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg focus:border-cyan-500 transition-colors outline-none text-sm text-zinc-300 shadow-inner" 
                 >
-                  <option value="">Standard</option>
-                  <option value="TOP 1">TOP 1 (Priorité MAX)</option>
-                  <option value="TOP 2">TOP 2</option>
-                  <option value="TOP 3">TOP 3</option>
-                  <option value="RAW">RAW</option>
+                  <option value="">Standard (Par défaut)</option>
+                  <option value="TOP 1">Taille Gigantesque (XL)</option>
+                  <option value="TOP 2">Taille Grande (L)</option>
+                  <option value="TOP 3">Taille Moyenne (M)</option>
+                  <option value="RAW">Taille Minimaliste (S)</option>
                 </select>
               </div>
               
