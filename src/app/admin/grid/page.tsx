@@ -46,6 +46,8 @@ export default async function AdminGridPage() {
       thumbnail_url,
       rank,
       rotation,
+      forced_span,
+      is_visible,
       slug
     `)
     .order('rank', { ascending: true })
