@@ -73,37 +73,7 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
     }
   }, [isActive, isAdjacent, project.main_video_url, project.video_url]);
 
-  // NOUVEAU : Silent Preroll (Forcer la mise en cache de la vidéo suivante sur iOS/Mobile)
-  const hasPrerolled = useRef(false);
 
-  useEffect(() => {
-    if (!videoRef.current) return;
-    
-    // Si la vidéo vient de se charger "à côté" mais qu'elle n'est pas encore visible
-    if (isAdjacent && !isVisible && !hasPrerolled.current) {
-      hasPrerolled.current = true; // On ne le fait qu'une fois
-      const video = videoRef.current;
-      
-      const wasMuted = video.muted;
-      video.muted = true; // Mute obligatoire pour l'Autoplay
-      
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-          playPromise.then(() => {
-              // Dès que le cache de lecture s'est enclenché, on stoppe net
-              video.pause();
-              video.muted = wasMuted;
-          }).catch(() => {
-              // Ignore poliment les bloqueurs sévères
-          });
-      }
-    }
-    
-    // Reset le preroll si la vidéo s'éloigne (pour le refaire plus tard si l'user revient)
-    if (!isAdjacent) {
-      hasPrerolled.current = false;
-    }
-  }, [isAdjacent, isVisible]);
 
   // Gérer la lecture / pause en fonction du scroll (isVisible -> Lecture fluide dès 1% d'affichage)
   useEffect(() => {
@@ -197,7 +167,7 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
 
   return (
     <div 
-      className="relative w-full h-[100dvh] snap-center overflow-hidden bg-black"
+      className="relative w-full h-[100svh] snap-center overflow-hidden bg-black"
       onClick={handleScreenClick}
     >
       {/* 1. LECTURE VIDÉO : Mode Ambilight (flou en background + contenu clean par dessus) */}
@@ -218,7 +188,8 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
 
       {/* 1B. Vidéo principale (Cover sur mobile / Contain sur tablette et +) */}
       {/* Sur mobile, la vidéo plonge sous le texte SI ELLE EST VERTICALE. Si elle est horizontale, elle reste contenue. */}
-      <div className="absolute inset-0 pt-[80px] sm:pt-0 flex items-center justify-center pointer-events-none overflow-hidden">
+      {/* La hauteur parent est calculée via JS ou définie précisément sur MobileReelFeed. Ici height 100%. */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
          <video 
             ref={videoRef}
             poster={project.thumbnail_url || undefined}
@@ -228,6 +199,7 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
                  : '[@media(max-height:500px)_and_(orientation:landscape)]:object-cover'
              }`}
             playsInline
+            autoPlay
             muted={isMuted}
             crossOrigin="anonymous"
             preload={isActive || isAdjacent ? "auto" : "none"} // Auto-charge l'immédiatement précédent/suivant
