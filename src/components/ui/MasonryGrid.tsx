@@ -248,7 +248,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
 
               // Le spanClasses définit à la fois la largeur ET la hauteur absolue dans la trame
               const spanClasses = project.category === 'GADGET' 
-                  ? (autoPackedSpans[project.id] || getGridSpan(isVertical)) 
+                  ? (project.forced_span || autoPackedSpans[project.id] || getGridSpan(isVertical)) 
                   : (project.forced_span || getGridSpan(isVertical));
 
               if (project.category === 'GADGET') {
