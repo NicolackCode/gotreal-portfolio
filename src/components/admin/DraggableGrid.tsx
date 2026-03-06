@@ -29,12 +29,13 @@ export interface Project {
   carousel_urls?: string[]
   thumbnail_url?: string
   rotation?: number
+  forced_span?: string
 }
 
-// Reproduction de la grille de la home pour que le DndKit sache dans quoi on déplace
+// Reproduction de la grille de la home
 const GridContainer = ({ children }: { children: React.ReactNode }) => (
-  // La même bento grid que la page All Projects
-  <div className="w-full grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 auto-rows-[160px] md:auto-rows-[220px] xl:auto-rows-[280px] gap-[4px] grid-flow-dense pb-24">
+  // Grille super fine (24 colonnes) pour un contrôle maximal. Mode manuel (sans auto-placement dense).
+  <div className="w-full grid grid-cols-6 md:grid-cols-12 xl:grid-cols-24 gap-[4px] auto-rows-[20px] pb-24">
     {children}
   </div>
 )
@@ -128,10 +129,10 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
     setIsSaving(true)
     setSaveStatus('Sauvegarde en cours...')
     
-    // On extrait juste les IDs dans le bon ordre (qui est aussi leur index)
-    const orderedIds = items.map(item => item.id)
+    // On extrait les infos nécessaires
+    const updatesData = items.map(item => ({ id: item.id, forced_span: item.forced_span }))
     
-    const res = await updateProjectsGridRank(orderedIds)
+    const res = await updateProjectsGridRank(updatesData)
     
     if (res.success) {
        setSaveStatus('✅ Sauvegarde avec succès ! La grille publique est à jour.')
@@ -261,6 +262,22 @@ export default function DraggableGrid({ initialProjects }: { initialProjects: Pr
                   onEdit={(p) => {
                     setCurrentEditProject(p as Project)
                     setIsFormOpen(true)
+                  }}
+                  onResize={(id, newSpan, isFinal) => {
+                    setItems(prevItems => {
+                      const newItems = prevItems.map(p => p.id === id ? { ...p, forced_span: newSpan } : p)
+                      
+                      if (isFinal) {
+                         // Pousse dans l'historique
+                         const nextHistory = history.slice(0, historyIndex + 1)
+                         nextHistory.push(newItems)
+                         setHistory(nextHistory)
+                         setHistoryIndex(nextHistory.length - 1)
+                      }
+                      
+                      return newItems
+                    })
+                    setSaveStatus(null)
                   }}
                 />
               )

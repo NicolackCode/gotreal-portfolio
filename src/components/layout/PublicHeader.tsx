@@ -6,29 +6,69 @@ import TransitionLink from '@/components/transition/TransitionLink'
 
 export default function PublicHeader() {
   const [isOpen, setIsOpen] = useState(false)
-  const [hidden, setHidden] = useState(false)
+  const [isIdle, setIsIdle] = useState(false)
+  const [isExternalHidden, setIsExternalHidden] = useState(false)
+
   const { scrollY } = useScroll()
+  const [isScrolledDown, setIsScrolledDown] = useState(false)
+
+  // Gestion de l'inactivité (Idle Timer) et du scroll
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+
+    const handleActivity = () => {
+      // Au moindre événement (hors scroll direct géré par framer-motion), on réaffiche le header (sauf si on scroll vers le bas)
+      setIsIdle(false)
+      clearTimeout(timeoutId)
+      
+      // On masque après 2.5 secondes d'inactivité
+      timeoutId = setTimeout(() => {
+        setIsIdle(true)
+      }, 2500)
+    }
+
+    // Initialisation
+    handleActivity()
+
+    // Écoute des événements utilisateurs globaux
+    window.addEventListener('mousemove', handleActivity)
+    window.addEventListener('click', handleActivity)
+    window.addEventListener('touchstart', handleActivity, { passive: true })
+    window.addEventListener('keydown', handleActivity)
+
+    return () => {
+      clearTimeout(timeoutId)
+      window.removeEventListener('mousemove', handleActivity)
+      window.removeEventListener('click', handleActivity)
+      window.removeEventListener('touchstart', handleActivity)
+      window.removeEventListener('keydown', handleActivity)
+    }
+  }, [])
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious()
+    
     // Si la page est tout en haut, le header est toujours visible
     if (latest <= 50) {
-      setHidden(false)
+      setIsScrolledDown(false)
+      setIsIdle(false) // On reset l'inactivité aussi
       return
     }
+    
     // Si on scrolle vers le bas (et qu'on a un peu dépassé le top) : on masque
     if (previous !== undefined && latest > previous! && latest > 50) {
-      setHidden(true)
+      setIsScrolledDown(true)
     } else {
-      // Si on scrolle vers le haut : on affiche
-      setHidden(false)
+      // Si on scrolle vers le haut : on affiche et on reset le timer d'idle
+      setIsScrolledDown(false)
+      setIsIdle(false)
     }
   })
 
   // Support pour les conteneurs à scroll interne (ex: MobileReelFeed)
   useEffect(() => {
-    const handleHide = () => setHidden(true)
-    const handleShow = () => setHidden(false)
+    const handleHide = () => setIsExternalHidden(true)
+    const handleShow = () => setIsExternalHidden(false)
 
     window.addEventListener('gotreal_header_hide', handleHide)
     window.addEventListener('gotreal_header_show', handleShow)
@@ -39,29 +79,33 @@ export default function PublicHeader() {
     }
   }, [])
 
-  // Glassmorphism (bg-black/60 + backdrop-blur) au lieu du mix-blend
+  // Le header est masqué si on est idle, scrollé vers le bas (ou caché par un événement externe) 
+  // ET que le menu principal n'est pas ouvert
+  const isHeaderHidden = (isIdle || isScrolledDown || isExternalHidden) && !isOpen
+
   return (
     <>
       <motion.header 
         variants={{
-          visible: { y: 0 },
-          hidden: { y: "-100%" }
+          visible: { y: 0, opacity: 1 },
+          hidden: { y: "-100%", opacity: 0 }
         }}
-        animate={hidden ? "hidden" : "visible"}
-        transition={{ duration: 0.35, ease: "easeInOut" }}
-        className="fixed top-0 left-0 w-full z-50 flex justify-between items-start p-6 lg:p-10 backdrop-blur-md bg-black/60 pointer-events-none"
+        initial="visible"
+        animate={isHeaderHidden ? "hidden" : "visible"}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+        className="fixed top-0 left-0 w-full z-50 flex justify-between items-center py-4 px-6 lg:py-5 lg:px-10 backdrop-blur-md bg-black/60 pointer-events-none"
       >
         
         {/* LOGO TITLE MASSIVE */}
-        <div className="flex flex-col gap-1 pointer-events-auto">
+        <div className="flex flex-col pointer-events-auto">
           <TransitionLink 
             href="/" 
-            className="text-2xl md:text-3xl font-sans font-black tracking-tighter uppercase hover:opacity-70 transition-opacity text-white"
+            className="text-2xl md:text-3xl font-sans font-black tracking-tighter uppercase hover:opacity-70 transition-opacity text-white leading-none"
             onClick={() => setIsOpen(false)}
           >
             GOTREAL
           </TransitionLink>
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em] opacity-80 mt-1 text-white">
+          <span className="text-[9px] md:text-[10px] font-mono uppercase tracking-[0.3em] opacity-80 mt-1.5 text-white leading-none">
             DIRECTOR & DOP
           </span>
         </div>
@@ -69,7 +113,7 @@ export default function PublicHeader() {
         {/* MENUS BURGER BUTTON */}
         <button 
           onClick={() => setIsOpen(true)}
-          className="pointer-events-auto text-xs md:text-sm font-sans font-bold uppercase tracking-widest hover:opacity-70 transition-opacity text-white"
+          className="pointer-events-auto text-sm md:text-base font-sans font-bold uppercase tracking-widest hover:opacity-70 transition-opacity text-white"
         >
           [ MENU ]
         </button>
@@ -134,3 +178,4 @@ export default function PublicHeader() {
     </>
   )
 }
+

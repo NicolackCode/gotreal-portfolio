@@ -24,3 +24,23 @@ body.video-idle #project-back-button {
   pointer-events: none !important;
   transition: opacity 0.5s ease-out;
 }
+
+@layer components {
+  /* Système de grid dynamique contournant le Purger CSS de Tailwind pour les tailles personnalisées */
+  .project-card-span {
+    grid-column: span var(--col-span, 1) / span var(--col-span, 1);
+    grid-row: span var(--row-span, 1) / span var(--row-span, 1);
+  }
+  @media (min-width: 768px) {
+    .project-card-span {
+      grid-column: span var(--md-col-span, var(--col-span, 1)) / span var(--md-col-span, var(--col-span, 1));
+      grid-row: span var(--md-row-span, var(--row-span, 1)) / span var(--md-row-span, var(--row-span, 1));
+    }
+  }
+  @media (min-width: 1280px) {
+    .project-card-span {
+      grid-column: span var(--xl-col-span, var(--md-col-span, var(--col-span, 1))) / span var(--xl-col-span, var(--md-col-span, var(--col-span, 1)));
+      grid-row: span var(--xl-row-span, var(--md-row-span, var(--row-span, 1))) / span var(--xl-row-span, var(--md-row-span, var(--row-span, 1)));
+    }
+  }
+}

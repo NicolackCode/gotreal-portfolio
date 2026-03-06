@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
-export async function updateProjectsGridRank(orderedIds: string[]) {
+export async function updateProjectsGridRank(updatesData: { id: string, forced_span?: string }[]) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,12 +28,12 @@ export async function updateProjectsGridRank(orderedIds: string[]) {
     // On va donc préparer un tableau d'objets avec id et le nouveau rank.
     // IMPORTANT : On fait des requêtes séquentielles rapides ou un Promise.all pour mettre à jour la colonne cible.
     
-    const updates = orderedIds.map((id, index) => {
+    const updates = updatesData.map((item, index) => {
        // Le rank = index de l'array pour que ce soit dans l'ordre du glisser/déposer
        return supabase
         .from('projects')
-        .update({ rank: index })
-        .eq('id', id);
+        .update({ rank: index, forced_span: item.forced_span || null })
+        .eq('id', item.id);
     });
 
     const results = await Promise.all(updates);

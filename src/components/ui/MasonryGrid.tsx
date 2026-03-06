@@ -23,6 +23,26 @@ interface MasonryGridProps {
   projects: Project[]
 }
 
+// Transforme la chaine "col-span-X row-span-Y" en variables CSS pour contourner le purger de Tailwind
+const parseSpanStyles = (spanString: string): React.CSSProperties => {
+  const vars: Record<string, string> = {};
+  if (!spanString) return vars;
+  const parts = spanString.trim().split(/\s+/);
+  for (const part of parts) {
+    const colMatch = part.match(/^(?:(md|xl):)?col-span-(\d+)$/);
+    if (colMatch) {
+      const prefix = colMatch[1] ? `--${colMatch[1]}-col-span` : '--col-span';
+      vars[prefix] = colMatch[2];
+    }
+    const rowMatch = part.match(/^(?:(md|xl):)?row-span-(\d+)$/);
+    if (rowMatch) {
+      const prefix = rowMatch[1] ? `--${rowMatch[1]}-row-span` : '--row-span';
+      vars[prefix] = rowMatch[2];
+    }
+  }
+  return vars as React.CSSProperties;
+}
+
 // On n'utilise plus Masonry mais une Grid pure CSS,
 // mais on garde les interfaces et le nom du fichier pour ne pas casser l'import père.
 
@@ -104,7 +124,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
     return uniqueCat.sort()
   }, [projects])
 
-  // Filtrer ET Trier les projets (Priorité: TOP 3 > TOP 2 > TOP 1 > RAW > Reste)
+  // Filtrer les projets
   const filteredProjects = useMemo(() => {
     let result = [...projects]
     
@@ -112,22 +132,7 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
       result = result.filter(p => (p.category || p.client)?.trim().toUpperCase() === activeFilter)
     }
 
-    return result.sort((a, b) => {
-      const getScore = (val?: string) => {
-        if (!val) return 5
-        if (val === 'TOP 1') return 1
-        if (val === 'TOP 2') return 2
-        if (val === 'TOP 3') return 3
-        if (val === 'RAW') return 4
-        return 5
-      }
-
-      const pA = getScore(a.priority)
-      const pB = getScore(b.priority)
-
-      if (pA !== pB) return pA - pB
-      return (a.rank || 0) - (b.rank || 0)
-    })
+    return result
   }, [projects, activeFilter])
 
   if (!projects || projects.length === 0) {
@@ -181,14 +186,14 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
         </div>
       )}
 
-      {/* GRILLE MASONRY (Asymétrique via react-masonry-css + Chaos Contrôlé) */}
+      {/* GRILLE DYNAMIQUE (Colonnes pures, hauteur ajustée via ratio pour 0 crop) */}
       {filteredProjects.length === 0 ? (
         <div className="w-full h-32 flex items-center justify-center text-zinc-500 font-mono tracking-widest uppercase text-xs">
           Aucun projet pour cette catégorie
         </div>
       ) : (
-        // Vraie Grid CSS (Bento Box), le grid-flow-dense fait remonter les blocs dans les trous
-        <div className="w-full grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 auto-rows-[160px] md:auto-rows-[220px] xl:auto-rows-[280px] gap-[4px] grid-flow-dense pb-24">
+        // Grille très fine (24 colonnes) pour un contrôle maximal. Mode manuel (sans auto-placement dense).
+        <div className="w-full grid grid-cols-6 md:grid-cols-12 xl:grid-cols-24 gap-[4px] auto-rows-[20px] pb-24">
             {filteredProjects.map((project, index) => {
               
               const isRotatedVertical = project.rotation === 90 || project.rotation === -90 || project.rotation === 270;
@@ -198,24 +203,24 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
               const physicalFormat = verifiedFormats[project.id];
               const isVertical = physicalFormat ? physicalFormat === 'vertical' : fallbackIsVertical;
 
-              // Formats "ZÉRO TROU NOIRS" : Les ratios de la grille correspondent aux ratios min max demandés.
-              const getGridSpan = (isVert: boolean, i: number) => {
+              // En mode grille ultra fine (24 cols, 20px rows), on calcule la surface de base :
+              const getGridSpan = (isVert: boolean) => {
+                 // 1 colonne = ~80px de large (sur grand écran). 1 row = 20px de haut.
+                 // ratio portrait moyen: 0.56 (9/16). ratio paysage: 1.77 (16/9).
+                 // Si col=4 (320px), la hauteur portrait = 320 / 0.56 = 571px. 
+                 // 571px / 20 = ~28 rows.
+                 
+                 // Pour simplifier et assurer un display parfait, on applique un ratio mathématique "magique" basé sur 4 pour les calculs:
                  if (isVert) {
-                    // VERTICAL (Portrait): Max = 2x3, Min = 1x2 (Tiktok ratio natif / Mobile ratio natif)
-                    if (i % 4 === 0) return "col-span-2 row-span-3";
-                    
-                    // Vertical standard : 1 col par 2 row
-                    return "col-span-1 row-span-2";
+                    // Vertical par défaut : 4 cols (large) x ~28 rows (haut)
+                    return "col-span-2 md:col-span-4 row-span-14 md:row-span-28";
                  }
-                 
-                 // HORIZONTAL (Paysage): Max = 3x2, Min = 2x1 (Ciné)
-                 if (i % 6 === 0) return "col-span-3 row-span-2"; 
-                 
-                 // Horizontal Standard (Cinéma 2x1):
-                 return "col-span-2 row-span-1"; 
+                 // Horizontal par défaut : 8 cols (large) x ~18 rows (haut)
+                 return "col-span-4 md:col-span-8 row-span-9 md:row-span-18"; 
               }
 
-              const spanClasses = getGridSpan(isVertical, index);
+              // Le spanClasses définit à la fois la largeur ET la hauteur absolue dans la trame
+              const spanClasses = project.forced_span || getGridSpan(isVertical);
 
               return (
                 <motion.div 
@@ -224,17 +229,47 @@ export default function MasonryGrid({ projects }: MasonryGridProps) {
                   initial={{ opacity: 0, scale: 0.9, y: 30 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: "easeOut", delay: (index % 10) * 0.05 }}
-                  className={`relative w-full h-full ${spanClasses} ring-1 ring-white/20`}
+                  style={parseSpanStyles(spanClasses)}
+                  className={`project-card-span relative w-full h-full overflow-hidden ring-1 ring-white/10`}
                 >
                   <ProjectCard 
                     project={project} 
                     priorityLoad={index < 8} 
                     globalIsMuted={globalIsMuted} 
                     onFormatLoaded={handleFormatLoaded}
-                    spanData={spanClasses} // Injecte le texte des grid-spans
+                    spanData={spanClasses.trim()} // Injecte le texte des grid-spans
                   />
                 </motion.div>
               )
+            })}
+
+            {/* FILLERS / GADGETS DÉCORATIFS */}
+            {/* Ces blocs vont automatiquement boucher les trous "impossibles" de la grille CSS dense */}
+            {Array.from({ length: 12 }).map((_, i) => {
+               // Génération de tailles de fillers petites pour se faufiler
+               const fillerCols = [2, 3, 4][i % 3]; // 2, 3 ou 4 colonnes max
+               const fillerRows = [4, 6, 8][i % 3]; // petites hauteurs
+               const spanClasses = `col-span-${fillerCols} row-span-${fillerRows}`;
+
+               return (
+                  <motion.div
+                    key={`filler-${i}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.3 }}
+                    transition={{ duration: 1, delay: 1 + (i * 0.1) }}
+                    style={parseSpanStyles(spanClasses)}
+                    className={`project-card-span relative w-full h-full bg-zinc-900/30 flex justify-center items-center overflow-hidden mix-blend-screen group`}
+                  >
+                     {/* Petite décoration "tech" */}
+                     <div className="text-[8px] font-mono text-zinc-700 uppercase tracking-widest opacity-50 group-hover:opacity-100 transition-opacity">
+                        [ {i % 2 === 0 ? 'VOID' : 'NULL'} ]
+                     </div>
+                     <div className="absolute top-1 left-1 w-1 h-1 bg-zinc-800 rounded-full" />
+                     <div className="absolute top-1 right-1 w-1 h-1 bg-zinc-800 rounded-full" />
+                     <div className="absolute bottom-1 right-1 w-1 h-1 bg-zinc-800 rounded-full" />
+                     <div className="absolute bottom-1 left-1 w-1 h-1 bg-zinc-800 rounded-full" />
+                  </motion.div>
+               )
             })}
         </div>
       )}
