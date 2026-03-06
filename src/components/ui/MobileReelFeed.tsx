@@ -83,6 +83,20 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
     }
   };
 
+  // Scroll automatique et fluide vers la vidéo suivante
+  const scrollToNext = (currentIndex: number) => {
+    if (containerRef.current) {
+        const slides = containerRef.current.querySelectorAll('.reel-slide');
+        if (currentIndex < slides.length - 1) {
+            const nextSlide = slides[currentIndex + 1] as HTMLElement;
+            containerRef.current.scrollTo({
+                top: nextSlide.offsetTop,
+                behavior: 'smooth'
+            });
+        }
+    }
+  };
+
   if (!projects || projects.length === 0) return null;
 
   return (
@@ -138,6 +152,7 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
                   isMuted={isGlobalMuted}
                   toggleMute={toggleGlobalMute}
                   onInteract={handleAnyInteraction}
+                  onVideoEnd={() => scrollToNext(index)}
               />
           </div>
         )

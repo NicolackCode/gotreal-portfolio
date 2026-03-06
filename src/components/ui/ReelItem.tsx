@@ -10,9 +10,10 @@ interface ReelItemProps {
   isMuted: boolean;
   toggleMute: () => void;
   onInteract: () => void;
+  onVideoEnd?: () => void;
 }
 
-export default function ReelItem({ project, isActive, isAdjacent = false, isMuted, toggleMute, onInteract }: ReelItemProps) {
+export default function ReelItem({ project, isActive, isAdjacent = false, isMuted, toggleMute, onInteract, onVideoEnd }: ReelItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -142,10 +143,10 @@ export default function ReelItem({ project, isActive, isAdjacent = false, isMute
             ref={videoRef}
             poster={project.thumbnail_url || undefined}
             className="w-full h-full object-contain pointer-events-none transform-gpu"
-            loop
             playsInline
             crossOrigin="anonymous"
             preload={isActive || isAdjacent ? "auto" : "none"} // Auto-charge l'immédiatement précédent/suivant
+            onEnded={onVideoEnd}
          />
       </div>
 
