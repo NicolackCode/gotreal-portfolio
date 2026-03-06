@@ -132,8 +132,8 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
 
   const isVertical = naturalVertical !== null ? naturalVertical : fallbackIsVertical;
 
-  // Priorité absolue au Span généré par le Bin Packing dynamique pour les Gadgets, sinon forced_span BDD, sinon naturel.
-  const spanClasses = autoPackedSpan || project.forced_span || getGridSpanAdmin(isVertical);
+  // L'utilisateur récupère le libre-arbitre. Le span généré mathématiquement n'est prioritaire QUE SI on l'a pas "customizé" en drag-resizing manuellement (`forced_span` en BDD).
+  const spanClasses = project.forced_span || autoPackedSpan || getGridSpanAdmin(isVertical);
   
   // NOUVEAU: Logique de redimensionnement de la carte (Handle) AVEC RATIO VERROUILLÉ ET COMPENSATION
   const [isResizing, setIsResizing] = useState(false);
@@ -296,7 +296,7 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
             
             {/* Bottom bar */}
             <div className="absolute font-mono text-zinc-600 uppercase bottom-2 left-1/2 -translate-x-1/2 min-w-max border border-zinc-800 bg-black/50 backdrop-blur rounded px-2 text-[6px]">
-               [ HOVER + SUPPR (DEL) POUR EFFACER ]
+               [ SIZE FREELY OR LET AUTO-FILL ]
             </div>
          </div>
       ) : (
@@ -342,15 +342,15 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
         </button>
       )}
 
-      {/* POIGNÉES DE REDIMENSIONNEMENT (BOTTOM-RIGHT SEULEMENT, DÉSACTIVÉ POUR LES GADGETS LIQUIDES) */}
-      {onResize && project.category !== 'GADGET' && (
+      {/* POIGNÉES DE REDIMENSIONNEMENT (BOTTOM-RIGHT SEULEMENT, DISPONIBLE POUR TOUT) */}
+      {onResize && (
         <>
           {/* Bottom Right */}
           <div 
              className={`absolute bottom-0 right-0 w-8 h-8 cursor-nwse-resize z-50 flex items-end justify-end p-1 transition-colors ${isResizing ? 'text-pink-500' : 'text-zinc-500 hover:text-white'}`}
              style={{ touchAction: 'none' }}
              onPointerDown={(e) => handleResizePointerDown(e, 1, 1)}
-             title="Redimensionner la tuile"
+             title="Redimensionner la tuile manuellement"
           >
              <svg className="w-3 h-3 md:w-4 md:h-4 opacity-70" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M22 22H10L22 10zM22 6L6 22H2L22 2z" />

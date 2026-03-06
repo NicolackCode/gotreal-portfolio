@@ -127,7 +127,7 @@ export function autoPackGadgets(projects: GridProject[]) {
                            }
                        }
                        
-                       let finalW = Math.max(2, bestW);
+                       const finalW = Math.max(2, bestW);
                        let finalH = Math.max(2, bestH);
 
                        // Esthétique : Si on est tout en bas (plus aucune vidéo pour bloquer la hauteur testée),
