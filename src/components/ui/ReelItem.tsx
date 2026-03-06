@@ -137,12 +137,12 @@ export default function ReelItem({ project, isActive, isAdjacent = false, isMute
         }}
       />
 
-      {/* 1B. Vidéo principale (object-contain pour ne jamais déformer/masquer de bouts) */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* 1B. Vidéo principale (Marge interne pour ne pas être caché par le Header Kategorix ni le Titre) */}
+      <div className="absolute inset-0 pt-[110px] pb-[110px] flex items-center justify-center pointer-events-none">
          <video 
             ref={videoRef}
             poster={project.thumbnail_url || undefined}
-            className="w-full h-full object-contain pointer-events-none transform-gpu"
+            className="w-full h-full object-contain transform-gpu"
             playsInline
             muted={isMuted}
             crossOrigin="anonymous"
@@ -152,11 +152,14 @@ export default function ReelItem({ project, isActive, isAdjacent = false, isMute
       </div>
 
       {/* 2. OVERLAY ASSOMBRISSEMENT BAS (Pour lire le texte) */}
-      <div className="absolute bottom-0 left-0 w-full h-[40%] sm:h-1/2 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 w-full h-[35%] sm:h-1/2 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none z-10" />
 
       {/* 3. INTERFACE UTILISATEUR (Textes & Boutons) */}
-      {/* Placé le plus bas possible : pb-safe (si support iOS) ou pb-2 pour frôler le bord de l'écran */}
-      <div className="absolute bottom-0 left-0 w-full px-4 pb-3 sm:p-6 sm:pb-8 flex z-20 pointer-events-auto items-end">
+      {/* Placé le plus bas possible : pb-2 pour frôler le bord de l'écran en bas */}
+      <div 
+         className="absolute bottom-0 left-0 w-full px-4 pt-10 flex z-20 pointer-events-auto items-end"
+         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+      >
         
         {/* Colonne Left : Les Infos */}
         <div className="flex-1 flex flex-col justify-end pr-4 sm:pr-8">
