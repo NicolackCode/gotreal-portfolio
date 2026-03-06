@@ -67,6 +67,20 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
   } = useSortable({ id })
 
   const [naturalVertical, setNaturalVertical] = useState<boolean | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isHovered && project.category === 'GADGET' && (e.key === 'Delete' || e.key === 'Backspace')) {
+        if (onDeleteGadget) {
+           onDeleteGadget(project.id);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isHovered, project.category, project.id, onDeleteGadget]);
+
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -243,7 +257,9 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
       style={combinedStyle}
       {...attributes}
       {...listeners}
-      className={`project-card-span relative cursor-grab active:cursor-grabbing w-full h-full bg-zinc-900 border ${isDragging ? 'border-pink-500 shadow-2xl scale-105' : 'border-zinc-800 hover:border-zinc-600'} transition-colors overflow-hidden`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`project-card-span relative cursor-grab active:cursor-grabbing w-full h-full bg-zinc-900 border ${isDragging ? 'border-pink-500 shadow-2xl scale-105' : 'border-zinc-800 hover:border-zinc-600'} transition-colors overflow-hidden group`}
     >
       {/* CONTENU CONDITIONNEL : GADGET vs PROJET CLASSIQUE */}
       {project.category === 'GADGET' ? (
@@ -280,7 +296,7 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
             
             {/* Bottom bar */}
             <div className="absolute font-mono text-zinc-600 uppercase bottom-2 left-1/2 -translate-x-1/2 min-w-max border border-zinc-800 bg-black/50 backdrop-blur rounded px-2 text-[6px]">
-               [ LIQUID FILL ACTIVÉ - NE PAS REDIMENSIONNER ]
+               [ HOVER + SUPPR (DEL) POUR EFFACER ]
             </div>
          </div>
       ) : (
