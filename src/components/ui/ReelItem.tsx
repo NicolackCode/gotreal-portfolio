@@ -21,6 +21,9 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
 
+  // Déterminer si la vidéo est tournée à la verticale (généralement 90 ou -90)
+  const isVertical = project.rotation && (project.rotation === 90 || project.rotation === -90 || project.rotation === 270);
+
   // Initialisation HLS Conditionnelle pour économiser la RAM
   useEffect(() => {
     const video = videoRef.current;
@@ -214,13 +217,12 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
       </div>
 
       {/* 1B. Vidéo principale (Cover sur mobile / Contain sur tablette et +) */}
-      {/* On n'utilise plus les marges forcées, mais une div responsive pour cadrer.
-          Sur mobile, la vidéo plonge sous le texte (object-cover ou contain naturel sans marge interne énorme). */}
+      {/* Sur mobile, la vidéo plonge sous le texte SI ELLE EST VERTICALE. Si elle est horizontale, elle reste contenue. */}
       <div className="absolute inset-0 pt-[80px] sm:pt-0 flex items-center justify-center pointer-events-none overflow-hidden">
          <video 
             ref={videoRef}
             poster={project.thumbnail_url || undefined}
-            className="w-full h-full object-cover md:object-contain transform-gpu"
+            className={`w-full h-full transform-gpu transition-all duration-300 ${isVertical ? 'object-cover md:object-contain' : 'object-contain'}`}
             playsInline
             muted={isMuted}
             crossOrigin="anonymous"
