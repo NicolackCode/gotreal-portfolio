@@ -6,6 +6,7 @@ import { Database } from '@/types/supabase';
 interface ReelItemProps {
   project: Database['public']['Tables']['projects']['Row'];
   isActive: boolean;
+  isVisible: boolean;
   isAdjacent?: boolean;
   isMuted: boolean;
   toggleMute: () => void;
@@ -13,8 +14,9 @@ interface ReelItemProps {
   onVideoEnd?: () => void;
 }
 
-export default function ReelItem({ project, isActive, isAdjacent = false, isMuted, toggleMute, onInteract, onVideoEnd }: ReelItemProps) {
+export default function ReelItem({ project, isActive, isVisible, isAdjacent = false, isMuted, toggleMute, onInteract, onVideoEnd }: ReelItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -74,8 +76,8 @@ export default function ReelItem({ project, isActive, isAdjacent = false, isMute
   useEffect(() => {
     if (!videoRef.current) return;
     
-    // Si la vidéo vient de se charger "à côté" mais qu'elle n'est pas jouée
-    if (isAdjacent && !isActive && !hasPrerolled.current) {
+    // Si la vidéo vient de se charger "à côté" mais qu'elle n'est pas encore visible
+    if (isAdjacent && !isVisible && !hasPrerolled.current) {
       hasPrerolled.current = true; // On ne le fait qu'une fois
       const video = videoRef.current;
       
@@ -98,40 +100,79 @@ export default function ReelItem({ project, isActive, isAdjacent = false, isMute
     if (!isAdjacent) {
       hasPrerolled.current = false;
     }
-  }, [isAdjacent, isActive]);
+  }, [isAdjacent, isVisible]);
 
-  // Gérer la lecture / pause en fonction du scroll (isActive)
+  // Gérer la lecture / pause en fonction du scroll (isVisible -> Lecture fluide dès 1% d'affichage)
   useEffect(() => {
     if (!videoRef.current) return;
 
-    if (isActive) {
-      videoRef.current.currentTime = 0; // Rembobiner au début pour l'effet Wow
-
-      videoRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {
-          // L'Autoplay Unmuted été bloqué par le téléphone (sans doute Battery Saver ou Safari strict)
-          // On le mute de force et on relance pour garantir l'image.
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            videoRef.current.play()
-              .then(() => setIsPlaying(true))
-              .catch(() => setIsPlaying(false)); // Là on déclare forfait
-          }
-        });
+    if (isVisible) {
+      if (videoRef.current.paused) {
+          // Rembobiner seulement si on vient vraiment de l'activer (wow effect sur le swipe)
+          videoRef.current.currentTime = 0; 
+          
+          videoRef.current.play()
+            .then(() => setIsPlaying(true))
+            .catch(() => {
+              // L'Autoplay Unmuted été bloqué par le téléphone (sans doute Battery Saver ou Safari strict)
+              // On le mute de force et on relance pour garantir l'image.
+              if (videoRef.current) {
+                videoRef.current.muted = true;
+                videoRef.current.play()
+                  .then(() => setIsPlaying(true))
+                  .catch(() => setIsPlaying(false)); // Là on déclare forfait
+              }
+            });
+      }
     } else {
       videoRef.current.pause();
       // setTimeout to avoid synchronous setState inside useEffect warning
       setTimeout(() => setIsPlaying(false), 0);
     }
-  }, [isActive]); // On enlève !isMuted d'ici, ce sera le watch ci-dessous qui s'en charge.
+  }, [isVisible]);
 
-  // Synchroniser le mute parent avec la balise vidéo (délicatement, après le lancement)
+  // Synchroniser le mute parent avec la balise vidéo : SEULE la vidéo 'isActive' (centrée) a le droit de parler
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.muted = isMuted;
+      // Si on est focus, on applique le global Muted.
+      // Si on ne l'est pas (et qu'on joue en parallèle dans le coin), on force le mute !
+      videoRef.current.muted = isActive ? isMuted : true;
     }
-  }, [isMuted]);
+  }, [isMuted, isActive]);
+
+  // EFFET AMBILIGHT (Copie de la vidéo sur un Canvas basse résolution fluoté par CSS GPU)
+  useEffect(() => {
+    let animationFrameId: number;
+    let lastDrawTime = 0;
+    
+    const drawAmbilight = (time: number) => {
+      if (!isActive || !isPlaying || !videoRef.current || !bgCanvasRef.current) return;
+      
+      // Throttle à ~15fps pour ne consommer aucune ressource Mobile
+      if (time - lastDrawTime > 66) {
+        const video = videoRef.current;
+        const canvas = bgCanvasRef.current;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx && video.videoWidth > 0) {
+          if (canvas.width !== 64) {
+             canvas.width = 64;
+             canvas.height = Math.floor(64 * (video.videoHeight / video.videoWidth));
+          }
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+        lastDrawTime = time;
+      }
+      
+      animationFrameId = requestAnimationFrame(drawAmbilight);
+    };
+    
+    if (isActive && isPlaying) {
+      animationFrameId = requestAnimationFrame(drawAmbilight);
+    }
+    
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [isActive, isPlaying]);
 
   // Toggle Lecture/Pause on Click complet sur l'écran et DÉCLENCHEMENT GLOBAL DU SON
   const handleScreenClick = (e: React.MouseEvent) => {
@@ -159,15 +200,18 @@ export default function ReelItem({ project, isActive, isAdjacent = false, isMute
       {/* 1. LECTURE VIDÉO : Mode Ambilight (flou en background + contenu clean par dessus) */}
       
       {/* 1A. Background Flou pour masquer le noir (Précieux pour les clips 16:9) */}
-      <div 
-        className="absolute inset-0 w-full h-full scale-110 opacity-30 select-none pointer-events-none"
-        style={{
-          backgroundImage: `url(${project.thumbnail_url})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'blur(30px) brightness(0.6)',
-        }}
-      />
+      <div className="absolute inset-0 w-full h-full scale-110 opacity-30 select-none pointer-events-none transform-gpu overflow-hidden">
+         {/* Poster static (visible pendant le chargement) */}
+         <div 
+           className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000"
+           style={{ backgroundImage: `url(${project.thumbnail_url})`, filter: 'blur(30px) brightness(0.6)' }}
+         />
+         {/* Canvas Vidéo Flou (L'Ambilight) */}
+         <canvas 
+            ref={bgCanvasRef}
+            className={`absolute inset-0 w-full h-full object-cover blur-[40px] brightness-[0.6] transition-opacity duration-1000 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}
+         />
+      </div>
 
       {/* 1B. Vidéo principale (Marge interne pour ne pas être caché par le Header Kategorix ni le Titre) */}
       <div className="absolute inset-0 pt-[110px] pb-[110px] flex items-center justify-center pointer-events-none">
