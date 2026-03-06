@@ -222,7 +222,11 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
          <video 
             ref={videoRef}
             poster={project.thumbnail_url || undefined}
-            className={`w-full h-full transform-gpu transition-all duration-300 ${isVertical ? 'object-cover md:object-contain' : 'object-contain'}`}
+            className={`w-full h-full transform-gpu transition-all duration-300 object-contain ${
+               isVertical 
+                 ? '[@media(max-width:767px)_and_(orientation:portrait)]:object-cover' 
+                 : '[@media(max-height:500px)_and_(orientation:landscape)]:object-cover'
+             }`}
             playsInline
             muted={isMuted}
             crossOrigin="anonymous"
