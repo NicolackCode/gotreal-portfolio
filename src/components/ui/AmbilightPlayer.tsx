@@ -702,7 +702,7 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
         // translate-x de -100vw centre la 2ème div (la vidéo actuelle).
         style={{ 
           transform: projects.length > 1 ? `translate3d(calc(-100vw + ${dragOffset}px), 0, 0)` : 'none', 
-          touchAction: 'none',
+          touchAction: 'pan-y',
           width: projects.length > 1 ? '300vw' : '100vw',
           // Pour s'assurer que les 3 éléments font exactement 100vw chacun
           display: 'flex',

@@ -95,10 +95,7 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
       
       {/* HEADER MINIMALISTE & FILTRES CATÉGORIES */}
       <div className="absolute top-0 left-0 w-full z-50 pointer-events-auto bg-gradient-to-b from-black/80 via-black/30 to-transparent pb-10">
-        <div className="px-4 pt-6 pb-2 flex justify-between items-center mix-blend-difference pointer-events-none">
-          <h1 className="text-[10px] font-sans font-black text-white tracking-[0.3em] uppercase opacity-90">
-               GOTREAL.
-          </h1>
+        <div className="px-4 pt-6 pb-2 flex justify-end items-center mix-blend-difference pointer-events-none">
           <span className="text-white font-mono text-[10px] tracking-widest opacity-60">
               {activeIndex + 1} / {filteredProjects.length}
           </span>
