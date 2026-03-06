@@ -162,7 +162,7 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
   return (
     <div 
       ref={containerRef}
-      className="w-full h-[100svh] bg-black overflow-y-scroll snap-y snap-mandatory scroll-smooth relative"
+      className="w-full h-[100dvh] bg-black overflow-y-scroll snap-y snap-mandatory scroll-smooth relative"
       // Pour éviter le fameux bounce effect élastique sur iOS (overscroll)
       style={{ overscrollBehaviorY: 'none' }}
       onScroll={handleUserActivity}

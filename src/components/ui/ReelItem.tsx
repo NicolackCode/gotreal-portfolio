@@ -52,9 +52,13 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
       } else {
         // Fallback pour iOS Safari (Native HLS) ou MP4
         if (project.main_video_url?.includes('.m3u8') && video.canPlayType('application/vnd.apple.mpegurl')) {
-          if (video.src !== project.main_video_url) video.src = project.main_video_url;
+          if (!video.currentSrc && !video.hasAttribute('src')) {
+            video.src = project.main_video_url;
+          }
         } else {
-          if (video.src !== project.video_url) video.src = project.video_url || "";
+          if (!video.currentSrc && !video.hasAttribute('src')) {
+            video.src = project.video_url || "";
+          }
         }
       }
     } else {
@@ -167,7 +171,7 @@ export default function ReelItem({ project, isActive, isVisible, isAdjacent = fa
 
   return (
     <div 
-      className="relative w-full h-[100svh] snap-center overflow-hidden bg-black"
+      className="relative w-full h-[100dvh] snap-center overflow-hidden bg-black"
       onClick={handleScreenClick}
     >
       {/* 1. LECTURE VIDÉO : Mode Ambilight (flou en background + contenu clean par dessus) */}
