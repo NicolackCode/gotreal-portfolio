@@ -108,6 +108,11 @@ export function autoPackGadgets(projects: GridProject[]) {
                            maxH++;
                        }
                        
+                       // Sécurité Admin : on force la taille mathématique à au moins 2x2 pour que le UI soit visible,
+                       // quitte à ce qu'il "dépasse" un peu sous la pile si le trou est d'1 pixel.
+                       maxW = Math.max(2, maxW);
+                       maxH = Math.max(2, maxH);
+                       
                        place(r, c, maxW, maxH);
                        
                        if (!gadgetSpans[p.id]) gadgetSpans[p.id] = { mobile: {w:1,h:1}, md: {w:1,h:1}, xl: {w:1,h:1} };

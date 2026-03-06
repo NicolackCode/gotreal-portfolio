@@ -258,13 +258,13 @@ export function SortableProjectCard({ id, project, isActive = true, onEdit, onRe
                    <div className="w-2 h-2 rounded-full bg-red-500/80 animate-pulse pointer-events-none" />
                    {onDeleteGadget && (
                      <button
-                       className="text-white/50 hover:text-red-500 bg-black/50 hover:bg-black p-1 transition-all z-50 cursor-pointer shadow-xl rounded"
+                       className="text-white hover:text-red-500 bg-red-900/50 hover:bg-black p-2 transition-all z-50 cursor-pointer shadow-xl rounded pointer-events-auto"
                        onClick={(e) => { e.stopPropagation(); onDeleteGadget(project.id); }}
                        onPointerDown={(e) => e.stopPropagation()}
                        title="Supprimer définitivement ce GADGET"
                      >
-                        <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg className="w-4 h-4 md:w-5 md:h-5 drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                      </button>
                    )}
