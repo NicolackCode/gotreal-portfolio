@@ -108,8 +108,14 @@ export function autoPackGadgets(projects: GridProject[]) {
                            maxH++;
                        }
                        
-                       // Sécurité Admin : on force la taille mathématique à au moins 2x2 pour que le UI soit visible,
-                       // quitte à ce qu'il "dépasse" un peu sous la pile si le trou est d'1 pixel.
+                       // Sécurité Admin & Esthétique Générale : 
+                       // Si le gadget a beaucoup de place en largeur (ex: tout en bas de la page),
+                       // on refuse qu'il s'applatisse comme une crêpe. On force sa hauteur à être a minima
+                       // proportionnelle à sa largeur (ex: un bloc carré)
+                       const minAestheticHeight = Math.ceil(maxW * 0.8); 
+                       maxH = Math.max(maxH, minAestheticHeight);
+
+                       // Et on garantit la règle d'or d'Interaction (La croix cliquable)
                        maxW = Math.max(2, maxW);
                        maxH = Math.max(2, maxH);
                        
