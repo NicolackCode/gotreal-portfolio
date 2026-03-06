@@ -141,7 +141,14 @@ export default function ProjectCard({
         className="relative w-full h-full overflow-hidden bg-zinc-950 rounded-2xl group shadow-[0_0_0_transparent] hover:shadow-[0_0_20px_rgba(236,72,153,0.35)]"
       >
         {project.main_video_url ? (
-          <div className="absolute inset-0 w-full h-full">
+          <div 
+            className="absolute inset-0 w-full h-full origin-center transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+            style={{
+               '--rot': project.rotation ? `${project.rotation}deg` : '0deg',
+               '--base-scl': isRotatedVertical ? '1.78' : '1',
+               transform: `rotate(var(--rot)) scale(var(--base-scl))`,
+            } as React.CSSProperties}
+          >
             <video
               ref={videoRef}
               onLoadedMetadata={handleLoadedMetadata}
@@ -150,13 +157,7 @@ export default function ProjectCard({
               playsInline
               poster={project.thumbnail_url}
               preload={priorityLoad ? "auto" : "metadata"}
-              // La vidéo interne compense sa rotation pour object-cover
-              style={{
-                 '--rot': project.rotation ? `${project.rotation}deg` : '0deg',
-                 '--base-scl': isRotatedVertical ? '1.78' : '1',
-                 transform: `rotate(var(--rot)) scale(var(--base-scl))`,
-              } as React.CSSProperties}
-              className="absolute inset-0 w-full h-full object-cover origin-center transition-transform duration-700 ease-out z-0 group-hover:scale-[1.05]"
+              className="absolute inset-0 w-full h-full object-cover transform-gpu"
             />
           </div>
         ) : (

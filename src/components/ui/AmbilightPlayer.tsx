@@ -712,12 +712,16 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
         
         {projects.length > 1 && (
             <div className={`w-[100vw] h-full flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 pointer-events-none ${isDragging ? 'opacity-80 scale-90' : 'opacity-40 scale-75'}`} style={{ minWidth: '100vw', width: '100vw' }}>
-              <video 
-                src={getPrevProject()?.video_url}
-                className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500"
-                style={getPlayerRotationStyle(getPrevProject()?.rotation)}
-                muted playsInline crossOrigin="anonymous" 
-              />
+              <div
+                 className="w-full h-full flex items-center justify-center transition-transform duration-500"
+                 style={getPlayerRotationStyle(getPrevProject()?.rotation)}
+              >
+                <video 
+                  src={getPrevProject()?.video_url}
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transform-gpu"
+                  muted playsInline crossOrigin="anonymous" 
+                />
+              </div>
             </div>
         )}
 
@@ -729,34 +733,42 @@ export default function AmbilightPlayer({ projects }: { projects: Project[] }) {
              </div>
           )}
 
-          <video 
-            ref={videoRef}
-            draggable={false}
-            className="w-full h-full object-contain drop-shadow-2xl transition-all duration-500 ease-in-out"
-            style={getPlayerRotationStyle(currentProject?.rotation)}
-            autoPlay
-            loop={projects.length === 1} // Ne boucle que s'il est tout seul. Sinon on passe au suivant.
-            onEnded={() => {
-               if (projects.length > 1) {
-                  // handleNext sans event
-                  setCurrentIndex((prev) => (prev + 1) % projects.length)
-               }
-            }}
-            muted={true} // Obligé pour l'autoplay, mais déverrouillé silencieusement par le WebAudio
-            playsInline
-            crossOrigin="anonymous" 
-          />
+          <div
+             className="w-full h-full flex items-center justify-center transition-transform duration-500 ease-in-out"
+             style={getPlayerRotationStyle(currentProject?.rotation)}
+          >
+            <video 
+              ref={videoRef}
+              draggable={false}
+              className="max-h-full max-w-full object-contain drop-shadow-2xl transform-gpu"
+              autoPlay
+              loop={projects.length === 1} // Ne boucle que s'il est tout seul. Sinon on passe au suivant.
+              onEnded={() => {
+                 if (projects.length > 1) {
+                    // handleNext sans event
+                    setCurrentIndex((prev) => (prev + 1) % projects.length)
+                 }
+              }}
+              muted={true} // Obligé pour l'autoplay, mais déverrouillé silencieusement par le WebAudio
+              playsInline
+              crossOrigin="anonymous" 
+            />
+          </div>
         </div>
         
         {projects.length > 1 && (
             <div className={`w-[100vw] h-full flex justify-center items-center px-12 md:px-24 flex-shrink-0 transition-all duration-500 pointer-events-none ${isDragging ? 'opacity-80 scale-90' : 'opacity-40 scale-75'}`} style={{ minWidth: '100vw', width: '100vw' }}>
               {/* Fallback visuel, ne pas précharger les grosses vidéos invisibles */}
-              <video 
-                src={getNextProject()?.video_url}
-                className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500"
-                style={getPlayerRotationStyle(getNextProject()?.rotation)}
-                muted playsInline crossOrigin="anonymous" preload="metadata"
-              />
+              <div
+                 className="w-full h-full flex items-center justify-center transition-transform duration-500"
+                 style={getPlayerRotationStyle(getNextProject()?.rotation)}
+              >
+                <video 
+                  src={getNextProject()?.video_url}
+                  className="max-h-full max-w-full object-contain drop-shadow-2xl transform-gpu"
+                  muted playsInline crossOrigin="anonymous" preload="metadata"
+                />
+              </div>
             </div>
         )}
 

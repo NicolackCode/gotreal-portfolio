@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import MasonryGrid from '@/components/ui/MasonryGrid'
+import MobileReelFeed from '@/components/ui/MobileReelFeed'
 
 export const revalidate = 0 // Pas de cache statique / live update admin
 
@@ -26,29 +27,38 @@ export default async function AllProjectsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black pt-32 pb-12 selection:bg-pink-500/30">
+    <main className="min-h-[100dvh] bg-black selection:bg-pink-500/30 font-sans">
       
-      {/* HEADER DE LA GALERIE (EYECANDY STYLE) */}
-      <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 xl:px-12 mb-12">
-        <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[10rem] font-sans font-black text-white uppercase tracking-tighter leading-none mb-4 mix-blend-difference">
-          ARCHIVES
-        </h1>
-        <p className="font-mono text-zinc-500 text-[10px] sm:text-xs uppercase tracking-[0.2em] max-w-lg">
-          UNE SÉLECTION DE PROJETS COMMERCIAUX, CLIPS MUSICAUX ET CRÉATIFS. 
-        </p>
+      {/* VUE MOBILE (TikTok Style Reels) : Prioritaire et Exclusif Mobile */}
+      <div className="block md:hidden">
+        <MobileReelFeed projects={projectsData || []} />
       </div>
 
-      {/* GRILLE DES PROJETS (FULL WIDTH 100VW BORD À BORD) */}
-      <div className="relative z-10 w-full overflow-hidden">
-        <MasonryGrid projects={projectsData || []} />
+      {/* VUE DESKTOP (Masonry Grid Classique) : Réservée aux écrans larges */}
+      <div className="hidden md:block pt-32 pb-12">
+        {/* HEADER DE LA GALERIE (EYECANDY STYLE) */}
+        <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 xl:px-12 mb-12">
+          <h1 className="text-4xl md:text-8xl lg:text-[10rem] font-black text-white uppercase tracking-tighter leading-none mb-4 mix-blend-difference">
+            ARCHIVES
+          </h1>
+          <p className="font-mono text-zinc-500 text-xs uppercase tracking-[0.2em] max-w-lg">
+            UNE SÉLECTION DE PROJETS COMMERCIAUX, CLIPS MUSICAUX ET CRÉATIFS. 
+          </p>
+        </div>
+
+        {/* GRILLE DES PROJETS (FULL WIDTH 100VW BORD À BORD) */}
+        <div className="relative z-10 w-full overflow-hidden">
+          <MasonryGrid projects={projectsData || []} />
+        </div>
+        
+        {/* FOOTER PUBLIC */}
+        <footer className="w-full border-t border-zinc-900 py-12 text-center mt-20">
+          <p className="font-bold text-zinc-500 text-[10px] md:text-xs uppercase tracking-[0.3em]">
+             © {new Date().getFullYear()} GOTREAL - TOUS DROITS RÉSERVÉS.
+          </p>
+        </footer>
       </div>
-      
-      {/* FOOTER PUBLIC */}
-      <footer className="w-full border-t border-zinc-900 py-12 text-center mt-20">
-        <p className="font-sans font-bold text-zinc-500 text-[10px] md:text-xs uppercase tracking-[0.3em]">
-           © {new Date().getFullYear()} GOTREAL - TOUS DROITS RÉSERVÉS.
-        </p>
-      </footer>
     </main>
   )
 }
+

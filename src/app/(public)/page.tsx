@@ -52,10 +52,10 @@ export default async function HomePage() {
       </div>
 
       {/* BOUTON CATCHY VERS LA GALERIE */}
-      <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
+      <div className="absolute bottom-[10vh] sm:bottom-12 left-0 right-0 flex justify-center z-20">
         <TransitionLink 
           href="/all-projects" 
-          className="text-white font-sans font-bold text-xs uppercase tracking-widest border border-zinc-700 px-8 py-4 hover:bg-white hover:text-black transition-colors"
+          className="text-white font-sans font-black sm:font-bold text-sm sm:text-xs uppercase tracking-widest border border-zinc-700 px-10 py-6 sm:px-8 sm:py-4 hover:bg-white hover:text-black transition-colors"
         >
           Découvrir les Projets
         </TransitionLink>
