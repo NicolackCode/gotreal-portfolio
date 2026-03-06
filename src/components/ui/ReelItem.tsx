@@ -7,9 +7,10 @@ interface ReelItemProps {
   isActive: boolean;
   isMuted: boolean;
   toggleMute: () => void;
+  onInteract: () => void;
 }
 
-export default function ReelItem({ project, isActive, isMuted, toggleMute }: ReelItemProps) {
+export default function ReelItem({ project, isActive, isMuted, toggleMute, onInteract }: ReelItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -20,11 +21,12 @@ export default function ReelItem({ project, isActive, isMuted, toggleMute }: Ree
 
     if (isActive) {
       videoRef.current.currentTime = 0; // Rembobiner au début pour l'effet Wow
+
       videoRef.current.play()
         .then(() => setIsPlaying(true))
         .catch(() => {
-          // L'Autoplay Unmuted été bloqué par le téléphone (sans doute Battery Saver)
-          // On le mute de force et on relance pour avoir l'image au moins.
+          // L'Autoplay Unmuted été bloqué par le téléphone (sans doute Battery Saver ou Safari strict)
+          // On le mute de force et on relance pour garantir l'image.
           if (videoRef.current) {
             videoRef.current.muted = true;
             videoRef.current.play()
@@ -37,19 +39,22 @@ export default function ReelItem({ project, isActive, isMuted, toggleMute }: Ree
       // setTimeout to avoid synchronous setState inside useEffect warning
       setTimeout(() => setIsPlaying(false), 0);
     }
-  }, [isActive]);
+  }, [isActive]); // On enlève !isMuted d'ici, ce sera le watch ci-dessous qui s'en charge.
 
-  // Synchroniser le mute parent avec la balise vidéo
+  // Synchroniser le mute parent avec la balise vidéo (délicatement, après le lancement)
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
     }
   }, [isMuted]);
 
-  // Toggle Lecture/Pause on Click complet sur l'écran
+  // Toggle Lecture/Pause on Click complet sur l'écran et DÉCLENCHEMENT GLOBAL DU SON
   const handleScreenClick = (e: React.MouseEvent) => {
-    // Éviter de trigger si on clique sur des boutons texte (ex: nom du client)
+    // Si on clique sur un bouton ou lien, on ne fait pas pause
     if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) return;
+
+    // Déclencher le hook parent (démarre le son global si c'est le 1er tap)
+    onInteract();
 
     if (videoRef.current) {
       if (isPlaying) {
