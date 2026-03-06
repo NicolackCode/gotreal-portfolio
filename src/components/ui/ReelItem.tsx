@@ -68,6 +68,38 @@ export default function ReelItem({ project, isActive, isAdjacent = false, isMute
     }
   }, [isActive, isAdjacent, project.main_video_url, project.video_url]);
 
+  // NOUVEAU : Silent Preroll (Forcer la mise en cache de la vidéo suivante sur iOS/Mobile)
+  const hasPrerolled = useRef(false);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    
+    // Si la vidéo vient de se charger "à côté" mais qu'elle n'est pas jouée
+    if (isAdjacent && !isActive && !hasPrerolled.current) {
+      hasPrerolled.current = true; // On ne le fait qu'une fois
+      const video = videoRef.current;
+      
+      const wasMuted = video.muted;
+      video.muted = true; // Mute obligatoire pour l'Autoplay
+      
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+          playPromise.then(() => {
+              // Dès que le cache de lecture s'est enclenché, on stoppe net
+              video.pause();
+              video.muted = wasMuted;
+          }).catch(() => {
+              // Ignore poliment les bloqueurs sévères
+          });
+      }
+    }
+    
+    // Reset le preroll si la vidéo s'éloigne (pour le refaire plus tard si l'user revient)
+    if (!isAdjacent) {
+      hasPrerolled.current = false;
+    }
+  }, [isAdjacent, isActive]);
+
   // Gérer la lecture / pause en fonction du scroll (isActive)
   useEffect(() => {
     if (!videoRef.current) return;
