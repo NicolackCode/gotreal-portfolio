@@ -125,22 +125,22 @@ function SortableItem({
             </h3>
             {getPriority(project.priority) === 1 && (
               <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 shadow-[0_0_8px_rgba(250,204,21,0.1)]">
-                Taille XL
+                Projet +++
               </span>
             )}
             {getPriority(project.priority) === 2 && (
               <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
-                Taille L
+                Projet ++
               </span>
             )}
             {getPriority(project.priority) === 3 && (
               <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
-                Taille M
+                Projet +
               </span>
             )}
             {getPriority(project.priority) === 4 && (
               <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 border border-orange-500/20">
-                Taille S
+                Brut / Bonus
               </span>
             )}
           </div>

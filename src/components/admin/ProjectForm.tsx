@@ -386,17 +386,17 @@ export default function ProjectForm({ project, onClose, onSuccess }: ProjectForm
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] uppercase text-zinc-500 mb-1.5 font-bold tracking-widest">Badge</label>
+                <label className="block text-[10px] uppercase text-zinc-500 mb-1.5 font-bold tracking-widest">Rang / Mise en avant</label>
                 <select 
                   value={priority}
                   onChange={e => setPriority(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 p-3 rounded-lg focus:border-cyan-500 transition-colors outline-none text-sm text-zinc-300 shadow-inner" 
                 >
                   <option value="">Standard (Par défaut)</option>
-                  <option value="TOP 1">Taille Gigantesque (XL)</option>
-                  <option value="TOP 2">Taille Grande (L)</option>
-                  <option value="TOP 3">Taille Moyenne (M)</option>
-                  <option value="RAW">Taille Minimaliste (S)</option>
+                  <option value="TOP 1">Projet +++ (Majeur)</option>
+                  <option value="TOP 2">Projet ++ (Important)</option>
+                  <option value="TOP 3">Projet + (Classique)</option>
+                  <option value="RAW">Brut / Bonus</option>
                 </select>
               </div>
               
