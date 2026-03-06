@@ -107,24 +107,24 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
       style={{ overscrollBehaviorY: 'none' }}
     >
       
-      {/* HEADER MINIMALISTE & FILTRES CATÉGORIES */}
-      <div className="absolute top-0 left-0 w-full z-40 pointer-events-none bg-gradient-to-b from-black/80 via-black/30 to-transparent pb-10">
-        <div className="px-4 pt-6 pb-2 flex justify-end items-center mix-blend-difference">
-          <span className="text-white font-mono text-[10px] tracking-widest opacity-60">
+      {/* HEADER MINIMALISTE & FILTRES CATÉGORIES (FIXED POUR RESTER TOUJOURS VISIBLE) */}
+      <div className="fixed top-0 left-0 w-full z-40 pointer-events-none bg-gradient-to-b from-black/90 via-black/50 to-transparent pt-[72px] pb-8">
+        <div className="px-4 pb-3 flex justify-end items-center mix-blend-difference">
+          <span className="text-white font-mono text-[10px] tracking-widest opacity-80 decoration-white/20">
               {activeIndex + 1} / {filteredProjects.length}
           </span>
         </div>
         
         {/* Catégories Scrollables */}
-        <div className="px-4 flex gap-3 overflow-x-auto no-scrollbar items-center mask-image-[linear-gradient(to_right,white_80%,transparent)] pointer-events-auto">
+        <div className="px-4 flex gap-3 overflow-x-auto no-scrollbar items-center mask-image-[linear-gradient(to_right,white_80%,transparent)] pointer-events-auto pl-4">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-mono tracking-widest uppercase transition-all ${
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] font-mono tracking-widest uppercase transition-all shadow-md ${
                   activeCategory === cat 
-                    ? 'bg-white text-black font-bold' 
-                    : 'bg-white/20 text-white backdrop-blur hover:bg-white/30'
+                    ? 'bg-white text-black font-bold border-transparent' 
+                    : 'bg-black/50 text-white backdrop-blur border border-white/10 hover:bg-white/20'
                 }`}
               >
                 {cat}

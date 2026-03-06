@@ -144,6 +144,7 @@ export default function ReelItem({ project, isActive, isAdjacent = false, isMute
             poster={project.thumbnail_url || undefined}
             className="w-full h-full object-contain pointer-events-none transform-gpu"
             playsInline
+            muted={isMuted}
             crossOrigin="anonymous"
             preload={isActive || isAdjacent ? "auto" : "none"} // Auto-charge l'immédiatement précédent/suivant
             onEnded={onVideoEnd}
