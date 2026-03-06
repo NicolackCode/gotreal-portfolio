@@ -37,8 +37,8 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
     const observerOptions = {
       root: containerRef.current,
       rootMargin: '0px',
-      // Trigger quand 60% de la vidéo est visible
-      threshold: 0.6,
+      // Trigger quand seulement 20% de la vidéo est visible (Lancement instantané type TikTok)
+      threshold: 0.20,
     };
 
     const handleIntersect: IntersectionObserverCallback = (entries) => {
