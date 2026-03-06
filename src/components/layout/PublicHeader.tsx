@@ -1,27 +1,67 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { motion, useScroll, useMotionValueEvent } from 'framer-motion'
 import TransitionLink from '@/components/transition/TransitionLink'
 
 export default function PublicHeader() {
   const [isOpen, setIsOpen] = useState(false)
+  const [hidden, setHidden] = useState(false)
+  const { scrollY } = useScroll()
 
-  // Le mode brutaliste demande un très haut contraste. 
-  // On utilise mix-blend-difference pour s'assurer que le header est visible sur les vidéos.
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const previous = scrollY.getPrevious()
+    // Si la page est tout en haut, le header est toujours visible
+    if (latest <= 50) {
+      setHidden(false)
+      return
+    }
+    // Si on scrolle vers le bas (et qu'on a un peu dépassé le top) : on masque
+    if (previous !== undefined && latest > previous! && latest > 50) {
+      setHidden(true)
+    } else {
+      // Si on scrolle vers le haut : on affiche
+      setHidden(false)
+    }
+  })
+
+  // Support pour les conteneurs à scroll interne (ex: MobileReelFeed)
+  useEffect(() => {
+    const handleHide = () => setHidden(true)
+    const handleShow = () => setHidden(false)
+
+    window.addEventListener('gotreal_header_hide', handleHide)
+    window.addEventListener('gotreal_header_show', handleShow)
+
+    return () => {
+      window.removeEventListener('gotreal_header_hide', handleHide)
+      window.removeEventListener('gotreal_header_show', handleShow)
+    }
+  }, [])
+
+  // Glassmorphism (bg-black/60 + backdrop-blur) au lieu du mix-blend
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-start p-6 lg:p-10 mix-blend-difference pointer-events-none">
+      <motion.header 
+        variants={{
+          visible: { y: 0 },
+          hidden: { y: "-100%" }
+        }}
+        animate={hidden ? "hidden" : "visible"}
+        transition={{ duration: 0.35, ease: "easeInOut" }}
+        className="fixed top-0 left-0 w-full z-50 flex justify-between items-start p-6 lg:p-10 backdrop-blur-md bg-black/60 pointer-events-none"
+      >
         
         {/* LOGO TITLE MASSIVE */}
         <div className="flex flex-col gap-1 pointer-events-auto">
           <TransitionLink 
             href="/" 
-            className="text-2xl md:text-3xl font-sans font-black tracking-tighter uppercase hover:opacity-70 transition-opacity"
+            className="text-2xl md:text-3xl font-sans font-black tracking-tighter uppercase hover:opacity-70 transition-opacity text-white"
             onClick={() => setIsOpen(false)}
           >
             GOTREAL
           </TransitionLink>
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em] opacity-80 mt-1">
+          <span className="text-[10px] font-mono uppercase tracking-[0.3em] opacity-80 mt-1 text-white">
             DIRECTOR & DOP
           </span>
         </div>
@@ -29,11 +69,11 @@ export default function PublicHeader() {
         {/* MENUS BURGER BUTTON */}
         <button 
           onClick={() => setIsOpen(true)}
-          className="pointer-events-auto text-xs md:text-sm font-sans font-bold uppercase tracking-widest hover:opacity-70 transition-opacity"
+          className="pointer-events-auto text-xs md:text-sm font-sans font-bold uppercase tracking-widest hover:opacity-70 transition-opacity text-white"
         >
           [ MENU ]
         </button>
-      </header>
+      </motion.header>
 
       {/* FULL SCREEN OVERLAY MENU - BRUTALIST STYLE */}
       <div 

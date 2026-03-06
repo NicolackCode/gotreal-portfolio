@@ -30,13 +30,25 @@ export default function MobileReelFeed({ projects }: MobileReelFeedProps) {
   // GESTION DU MASQUAGE AUTOMATIQUE DU HEADER (Façon TikTok/Insta)
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrollY = useRef(0);
 
-  const handleUserActivity = () => {
+  const handleUserActivity = (e?: React.UIEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     setIsHeaderVisible(true);
     if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     scrollTimeoutRef.current = setTimeout(() => {
       setIsHeaderVisible(false);
     }, 2500); // Cache le header après 2.5s d'inactivité
+    
+    // NOUVEAU : Communication Scroll vers PublicHeader
+    if (e && 'currentTarget' in e) {
+      const currentY = (e.currentTarget as HTMLDivElement).scrollTop;
+      if (currentY > lastScrollY.current + 10) {
+        window.dispatchEvent(new CustomEvent('gotreal_header_hide'));
+      } else if (currentY < lastScrollY.current - 10) {
+        window.dispatchEvent(new CustomEvent('gotreal_header_show'));
+      }
+      lastScrollY.current = currentY;
+    }
   };
 
   // Initier le timeout dès le montage
